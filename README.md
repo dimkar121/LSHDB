@@ -10,6 +10,6 @@ String dbName = "dblp";
 String engine = "gr.eap.LSHDB.MapDB";
 HammingLSHStore lsh = new HammingLSHStore(folder, dbName, engine, null,true);
 ```
-one opens a database named `dblp`, which is stored under `c:/MAPDB`, and is created using `Hamming LSH` and `MapDB` as the underlying LSH implemntation and noSQL engine, repsectively.
+one opens a database named `dblp`, which is stored under `/home/LSHDB/stores`, and is created using `Hamming LSH` and `MapDB` as the underlying LSH implemntation and noSQL engine, repsectively.
 
 Preliminary details abput LSH can be found at [https://en.wikipedia.org/wiki/Locality-sensitive_hashing]. 
