@@ -27,9 +27,44 @@ In the in-line mode, using a simple initialization code snippet of the following
 String folder = "/home/LSHDB/stores";
 String dbName = "dblp";
 String engine = "gr.eap.LSHDB.MapDB";
-HammingLSHStore lsh = new HammingLSHStore(folder, dbName, engine, null,true);
+HammingLSHStore lsh = new HammingLSHStore(folder, dbName, engine);
 ```
-one opens a database named `dblp`, which is stored under `/home/LSHDB/stores`, and is created using `Hamming LSH` and `MapDB` (http://www.mapdb.org) as the underlying LSH implemntation and noSQL engine, repsectively.
+one opens a database named `dblp`, which is stored under `/home/LSHDB/stores`, and is created using `Hamming LSH` and `MapDB` (http://www.mapdb.org) as the underlying LSH implementation and noSQL engine, respectively.
+
+A) Inserting records to the `dblp` store
+Assume a store that contains the titles of the publications contained in [DBLP](http://dblp.uni-trier.de/) along with the name of their first author. In order to support queries with respect to these names, we have to specify a keyed field, from which specialized data structures will be constructed and persisted. If one also needs the title of the publication, then he/she simply adds an additional keyed field.
+```
+Key key1 = new HammingKey("author");
+HammingConfiguration hc = new HammingConfiguration(folder, dbName, engine, new Key[]{key1}, true);
+hc.saveConfiguration();
+HammingLSHStore lsh = new HammingLSHStore(folder, dbName, engine, hc, true);
+```
+
+B) Query the store
+Thw way to submit similarity queries against a store, using keyed fields, is as follows:
+```
+QueryRecord query = new QueryRecord(dbName, 40);
+query.setKeyedField("author", new String[]{"John"},1.0,true);
+Result result = lsh.query(query);
+result.prepare();  
+ArrayList<Record> arr = result.getRecords();
+```
+Using the above query for the records mentioned above, the results contain the following entries:
+- M. R. Stalin John An investigation of ball burnishing process on CNC lathe using finite element analysis
+- Christian John Transformation und ontologische Formulierung multikriterieller Problemstellungen f
+- Benjamin Johnen A Dynamic Time Warping algorithm for industrial robot m
+- Donghee Yvette Wohn Understanding Perceived Social Support through Communication Time  Frequency  and Media Multiplexity
+- Colette Johnen Memory Efficient Self-stabilizing Distance-k Independent Dominating Set Construction
+
+By sliding the threshold to the left (tightening) 
+`query.setKeyedField("author", new String[]{"John"},1.0,true);`
+we narrow the reults, which get closer to the query value ("John"):
+- Aaron Johnson Computational Objectivity in Depression Assessment for Unstructured Large Datasets
+- M. R. Stalin John An investigation of ball burnishing process on CNC lathe using finite element analysis
+- Christian John Transformation und ontologische Formulierung multikriterieller Problemstellungen f
+- Michael Johnson Unifying Set-Based  Delta-Based and Edit-Based Lenses
+- Rachel St. John Spatially explicit forest harvest scheduling with difference equations
+
 
 
 In case one needs to run LSHDB as a server instance, then, should provide `config.xml` with the following minimum configuaration:
@@ -62,4 +97,4 @@ In case one needs to run LSHDB as a server instance, then, should provide `confi
 The above snippet fires up a LSHDB instance, which hosts a single store, on all network interfaces of the local machine listening on port 4443.
 
 
-A paper that deals with LSH and PPRL is [An LSH-Based Blocking Approach with a Homomorphic Matching Technique for Privacy-Preserving Record Linkage](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6880802&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6880802), published by IEEE TKDE (Volume:27, Issue: 4, 2015).
+For the interested reader, a research paper that deals with three LSH families in conjunction with PPRL is [An LSH-Based Blocking Approach with a Homomorphic Matching Technique for Privacy-Preserving Record Linkage](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6880802&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6880802), published by IEEE TKDE (Volume:27, Issue: 4, 2015).
