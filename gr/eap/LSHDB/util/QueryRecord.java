@@ -4,6 +4,7 @@
  */
 package gr.eap.LSHDB.util;
 
+import gr.eap.LSHDB.Key;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,6 +36,12 @@ public class QueryRecord extends Record {
                 queryFieldNames.add(fieldName);
         }
     }
+    
+    public void setKeyedField(String fieldName, Object fieldValue, double userPercentageThreshold, boolean performComparisons){
+        set(fieldName,"",userPercentageThreshold, performComparisons);
+        set(fieldName+Key.TOKENS,fieldValue,userPercentageThreshold, performComparisons);        
+    }
+    
     
     public void set(double userPercentageThreshold, boolean performComparisons) {
             conf.put("recordLevel", new QueryValueConf(userPercentageThreshold, performComparisons));

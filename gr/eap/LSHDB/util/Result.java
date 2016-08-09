@@ -105,7 +105,7 @@ public class Result implements Serializable {
         for (int i = 0; i < fieldNames.size(); i++) {
             String fieldName = fieldNames.get(i);
             if (fieldName.endsWith(Key.TOKENS)) {
-                continue;
+                continue;             
             }
             HashMap<String, Record> map = recordListMap.get(fieldName).getRecords();
             mapField.put(fieldName, map);
@@ -143,7 +143,7 @@ public class Result implements Serializable {
         }
     }
 
-    public boolean add(String fieldName, Record rec) {
+    public boolean add(String fieldName, Record rec) {       
         if (recordListMap.containsKey(fieldName)) {            
             return recordListMap.get(fieldName).add(rec);
         }

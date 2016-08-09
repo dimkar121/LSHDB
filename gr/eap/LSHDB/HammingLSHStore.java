@@ -212,7 +212,7 @@ public class HammingLSHStore extends DataStore {
                        
                         pairs++;
                         int d = distance(queryBs, bs);
-                        
+                       
                         
                         if (d <= t) {
                             if (result.add(keyFieldName, dataRec)) {                                
