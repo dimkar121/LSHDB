@@ -1,6 +1,8 @@
 # LSHDB
 LSHDB is a persistent data engine, which relies on the [Locality-Sensitive Hashing](https://en.wikipedia.org/wiki/Locality-sensitive_hashing) (LSH) technique and noSQL stores, 
-for performing [record linkage](https://en.wikipedia.org/wiki/Record_linkage) (including privacy-preserving record linkage) and similarity search tasks.
+for performing [record linkage](https://en.wikipedia.org/wiki/Record_linkage) (including [privacy-preserving record linkage](https://www.cs.cmu.edu/~rjhall/linkage_survey_final.pdf) - PPRL) and similarity search tasks.
+
+A paper that deals with LSH and PPRL is [An LSH-Based Blocking Approach with a Homomorphic Matching Technique for Privacy-Preserving Record Linkage](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6880802&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6880802), published by IEEE TKDE (Volume:27, Issue: 4, 2015).  
 
 The main features of LSHDB are:
 * _Easy extensibility_  Support for any noSQL data store, or any LSH technique can be easily plugged by extending or implementing the respective abstract classes or interfaces.
