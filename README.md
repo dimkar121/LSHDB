@@ -1,6 +1,16 @@
 # LSHDB
-LSHDB is a persistent data engine, which relies on Locality-Sensitive Hashing and noSQL stores, 
-for performing record linkage (and privacy-preserving record linkage) and similarity search tasks.
+LSHDB is a persistent data engine, which relies on the [Locality-Sensitive Hashing](https://en.wikipedia.org/wiki/Locality-sensitive_hashing) (LSH) technique and noSQL stores, 
+for performing [record linkage](https://en.wikipedia.org/wiki/Record_linkage) (including privacy-preserving record linkage) and similarity search tasks.
+
+The main features of LSHDB are:
+* _Easy extensibility_  Support for any noSQL data store, or any LSH technique can be easily plugged by extending or implementing the respective abstract classes or interfaces.
+* _Support of both the online query-driven mode and the offline batch process of record linkage_  LSHDB works in two modes; the first mode allows the resolution of the submitted queries in real time, while the second mode works in the traditional offline mode, which reports the results after the record linkage task has been completed.
+* _Suport of the PPRL mode_  In the case of PPRL, each participating party, termed also as a data custodian, may send its records, which have been previously masked, to a Trusted Third Party (TTP). The TTP configures and uses LSHDB for performing the linkage task and eventually sending the results back to the respective data custodians.
+* _Ease of use_  Queries can be submitted against a data store using just four lines of code.
+* _Similarity sliding_  The developer can specify the desired level of similarity between the query and the returned values by using the similarity sliding feature. 
+* _Polymorphism of the response_  The result set can be returned either in terms of Java objects, or in JSON \cite{json} format for interoperability purposes.
+* _Support of distributed queries_  A query can be forwarded to multiple instances of LSHDB to support data stores that have been horizontally partitioned into multiple compute nodes.
+
 
 Stores created by LSHDB can be accessed either in-line or using sockets. 
 In the in-line mode, using a simple initialization code snippet of the following form:
@@ -12,7 +22,6 @@ HammingLSHStore lsh = new HammingLSHStore(folder, dbName, engine, null,true);
 ```
 one opens a database named `dblp`, which is stored under `/home/LSHDB/stores`, and is created using `Hamming LSH` and `MapDB` (http://www.mapdb.org) as the underlying LSH implemntation and noSQL engine, repsectively.
 
-Preliminary details abput LSH can be found at [https://en.wikipedia.org/wiki/Locality-sensitive_hashing]. 
 
 In case one needs to run LSHDB as a server instance, then, should provide `config.xml` with the following minimum configuaration:
 ```
