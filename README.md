@@ -31,7 +31,9 @@ HammingLSHStore lsh = new HammingLSHStore(folder, dbName, engine);
 ```
 one opens a database named `dblp`, which is stored under `/home/LSHDB/stores`, and is created using `Hamming LSH` and `MapDB` (http://www.mapdb.org) as the underlying LSH implementation and noSQL engine, respectively.
 
-A) Inserting records to the `dblp` store
+In the following, we will showcase how one can (a) insert some records, and (b) submit similarity queries to the `dblp` store.
+
+a) Inserting records to the `dblp` store
 Assume a store that contains the titles of the publications contained in [DBLP](http://dblp.uni-trier.de/) along with the name of their first author. In order to support queries with respect to these names, we have to specify a keyed field, from which specialized data structures will be constructed and persisted. If one also needs the title of the publication, then he/she simply adds an additional keyed field.
 ```
 Key key1 = new HammingKey("author");
@@ -40,7 +42,7 @@ hc.saveConfiguration();
 HammingLSHStore lsh = new HammingLSHStore(folder, dbName, engine, hc, true);
 ```
 
-B) Query the store
+b) Query the store
 Thw way to submit similarity queries against a store, using keyed fields, is as follows:
 ```
 QueryRecord query = new QueryRecord(dbName, 40);
@@ -49,21 +51,24 @@ Result result = lsh.query(query);
 result.prepare();  
 ArrayList<Record> arr = result.getRecords();
 ```
+
 Using the above query for the records mentioned above, the results contain the following entries:
-- M. R. Stalin John An investigation of ball burnishing process on CNC lathe using finite element analysis
-- Christian John Transformation und ontologische Formulierung multikriterieller Problemstellungen f
-- Benjamin Johnen A Dynamic Time Warping algorithm for industrial robot m
-- Donghee Yvette Wohn Understanding Perceived Social Support through Communication Time  Frequency  and Media Multiplexity
-- Colette Johnen Memory Efficient Self-stabilizing Distance-k Independent Dominating Set Construction
+
+- M. R. Stalin __John__ An investigation of ball burnishing process on CNC lathe using finite element analysis
+- Christian __John__ Transformation und ontologische Formulierung multikriterieller Problemstellungen f
+- Benjamin __Johnen__ A Dynamic Time Warping algorithm for industrial robot m
+- Donghee Yvette __Wohn__ Understanding Perceived Social Support through Communication Time  Frequency  and Media Multiplexity
+- Colette __Johnen__ Memory Efficient Self-stabilizing Distance-k Independent Dominating Set Construction etc.
 
 By sliding the threshold to the left (tightening) 
 `query.setKeyedField("author", new String[]{"John"},1.0,true);`
 we narrow the reults, which get closer to the query value ("John"):
-- Aaron Johnson Computational Objectivity in Depression Assessment for Unstructured Large Datasets
-- M. R. Stalin John An investigation of ball burnishing process on CNC lathe using finite element analysis
-- Christian John Transformation und ontologische Formulierung multikriterieller Problemstellungen f
-- Michael Johnson Unifying Set-Based  Delta-Based and Edit-Based Lenses
-- Rachel St. John Spatially explicit forest harvest scheduling with difference equations
+
+- Aaron __Johnson__ Computational Objectivity in Depression Assessment for Unstructured Large Datasets
+- M. R. Stalin __John__ An investigation of ball burnishing process on CNC lathe using finite element analysis
+- Christian __John__ Transformation und ontologische Formulierung multikriterieller Problemstellungen f
+- Michael __Johnson__ Unifying Set-Based  Delta-Based and Edit-Based Lenses
+- Rachel St. __John__ Spatially explicit forest harvest scheduling with difference equations etc.
 
 
 
