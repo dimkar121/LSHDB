@@ -5,7 +5,7 @@ for performing record linkage (and privacy-preserving record linkage) and simila
 Stores created by LSHDB can be accessed either in-line or using sockets. 
 In the in-line mode, using a simple initialization code snippet of the following form:
 ```
-String folder = "c:/MAPDB";
+String folder = "/home/LSHDB/stores";
 String dbName = "dblp";
 String engine = "gr.eap.LSHDB.MapDB";
 HammingLSHStore lsh = new HammingLSHStore(folder, dbName, engine, null,true);
