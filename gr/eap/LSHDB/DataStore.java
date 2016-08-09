@@ -1,0 +1,228 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package gr.eap.LSHDB;
+
+import gr.eap.LSHDB.priv.Client;
+import gr.eap.LSHDB.util.QueryRecord;
+import gr.eap.LSHDB.util.Result;
+import gr.eap.LSHDB.util.Record;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+/**
+ *
+ * @author dimkar
+ */
+public abstract class DataStore {
+
+    String folder;
+    String dbName;
+    String dbEngine;
+    public String pathToDB;
+    public StoreEngine data;
+    public StoreEngine keys;
+    public StoreEngine records;
+    HashMap<String, StoreEngine> keyMap = new HashMap<String, StoreEngine>();
+    HashMap<String, StoreEngine> dataMap = new HashMap<String, StoreEngine>();
+    ArrayList<Node> nodes = new ArrayList<Node>();
+    boolean queryRemoteNodes = false;
+    boolean massInsertMode = false;
+    
+    public void setMassInsertMode(boolean status){
+        massInsertMode = status;
+    }
+    
+    public boolean getMassInsertMode(){
+        return massInsertMode;
+    }
+    
+    public void setQueryMode(boolean status){
+        queryRemoteNodes = status;
+    }
+    
+    public boolean getQueryMode(){
+        return queryRemoteNodes;
+    }
+    
+    public ArrayList<Node> getNodes() {
+        return this.nodes;
+    }
+
+    public void addNode(Node n) {
+        this.nodes.add(n);
+    }
+
+    public StoreEngine getKeyMap(String fieldName) {
+        fieldName = fieldName.replaceAll(" ", "");
+        return keyMap.get(fieldName);
+    }
+
+    public void setKeyMap(String fieldName,boolean massInsertMode) {
+        fieldName = fieldName.replaceAll(" ", "");
+        keyMap.put(fieldName, DataStoreFactory.build(folder, dbName, "keys_" + fieldName, dbEngine,massInsertMode));
+    }
+
+    public StoreEngine getDataMap(String fieldName) {
+        fieldName = fieldName.replaceAll(" ", "");
+        return dataMap.get(fieldName);
+    }
+
+    public void setDataMap(String fieldName, boolean massInsertMode) {
+        fieldName = fieldName.replaceAll(" ", "");
+        dataMap.put(fieldName, DataStoreFactory.build(folder, dbName, "data_" + fieldName, dbEngine,massInsertMode));
+    }
+
+    public void init(String dbEngine,boolean massInsertMode) throws SecurityException {
+        this.dbEngine = dbEngine;
+        pathToDB = folder + System.getProperty("file.separator") + dbName;
+        records = DataStoreFactory.build(folder, dbName, "records", dbEngine,massInsertMode);
+        if ((this.getConfiguration() != null) && (this.getConfiguration().isKeyed())) {
+            String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
+            for (int j = 0; j < keyFieldNames.length; j++) {
+                String keyFieldName = keyFieldNames[j];
+                setKeyMap(keyFieldName,massInsertMode);
+                setDataMap(keyFieldName,massInsertMode);
+            }
+        } else {
+            keys = DataStoreFactory.build(folder, dbName, "keys", dbEngine,massInsertMode);
+            data = DataStoreFactory.build(folder, dbName, "data", dbEngine,massInsertMode);
+            keyMap.put("recordLevel", keys);
+            dataMap.put("recordLevel", data);
+
+        }
+
+    }
+
+    public void persist(){
+        records .persist();
+        if (this.getConfiguration().isKeyed()) {
+            String[] keyFieldNames = this.getConfiguration().keyFieldNames;
+            for (int j = 0; j < keyFieldNames.length; j++) {
+                String indexFieldName = keyFieldNames[j];
+                StoreEngine dataFactory = getKeyMap(indexFieldName);
+                dataFactory.persist();
+                dataFactory = getDataMap(indexFieldName);
+                dataFactory.persist();
+            }
+        } else {
+            data.persist();
+            keys.persist();
+        }
+    }
+    
+    
+    public void close() {
+
+        records.close();
+        if (this.getConfiguration().isKeyed()) {
+            String[] keyFieldNames = this.getConfiguration().keyFieldNames;
+            for (int j = 0; j < keyFieldNames.length; j++) {
+                String indexFieldName = keyFieldNames[j];
+                StoreEngine dataFactory = getKeyMap(indexFieldName);
+                dataFactory.close();
+                dataFactory = getDataMap(indexFieldName);
+                dataFactory.close();
+            }
+        } else {
+            data.close();
+            keys.close();
+        }
+    }
+
+    public static byte[] serialize(Object obj) throws IOException {
+        try (ByteArrayOutputStream b = new ByteArrayOutputStream()) {
+            try (ObjectOutputStream o = new ObjectOutputStream(b)) {
+                o.writeObject(obj);
+            }
+            return b.toByteArray();
+        }
+    }
+
+    public static Object deserialize(byte[] data) throws IOException, ClassNotFoundException {
+        ByteArrayInputStream in = new ByteArrayInputStream(data);
+        ObjectInputStream is = new ObjectInputStream(in);
+        return is.readObject();
+    }
+
+    public String getDbName() {
+        return this.dbName;
+    }
+
+    public String getDbEngine() {
+        return this.dbEngine;
+    }
+
+    public Result queryRemoteNodes(QueryRecord queryRecord, Result result) {
+        if (this.getNodes().size()==0)
+            return result;
+        // should implment get Active Nodes
+        ExecutorService executorService = Executors.newFixedThreadPool(this.getNodes().size());
+        List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
+
+        final QueryRecord q = queryRecord;
+        
+        //RemoteQuery[] rqs = new RemoteQuery[];
+        for (int i = 0; i < this.getNodes().size(); i++) {
+            final Node node = this.getNodes().get(i);
+            if (node.isEnabled())
+            callables.add(new Callable<Result>() {
+                public Result call() throws Exception {
+                    System.out.println("querying remote node "+node.ip);
+                    Client client = new Client(node.ip, node.port, q.getDbName());
+                    return client.queryServer(q);
+                }
+            });
+        }
+
+
+        try {
+            List<Future<Result>> futures = executorService.invokeAll(callables);
+
+            for (Future<Result> future : futures) {
+                if (future != null) {
+                    Result partialResults = future.get();
+                    if (partialResults != null) {
+                        for (int j = 0; j < partialResults.getRecords().size(); j++) {
+                            Record rec = partialResults.getRecords().get(j);
+                            rec.setRemote();
+                            result.getRecords().add(rec);
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        executorService.shutdown();
+        return result;
+    }
+    
+    
+    
+    
+    
+    
+    
+
+    public abstract void hash(String id, Object data, String keyFieldName);
+
+    public abstract Result query(QueryRecord queryRecord);
+
+    public abstract void insert(Record rec);
+
+    public abstract Configuration getConfiguration();
+   
+}
