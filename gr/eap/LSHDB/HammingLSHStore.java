@@ -5,7 +5,6 @@
  */
 package gr.eap.LSHDB;
 
-import gr.eap.LSHDB.priv.Client;
 import gr.eap.LSHDB.util.FileUtil;
 import gr.eap.LSHDB.util.Property;
 import gr.eap.LSHDB.util.QueryRecord;
