@@ -11,6 +11,16 @@ The main features of LSHDB are:
 * _Polymorphism of the response_  The result set can be returned either in terms of Java objects, or in JSON \cite{json} format for interoperability purposes.
 * _Support of distributed queries_  A query can be forwarded to multiple instances of LSHDB to support data stores that have been horizontally partitioned into multiple compute nodes.
 
+The dependency info for downloading the jar from the central maven repo is:
+```
+<dependency>
+    <groupId>gr.eap.LSHDB</groupId>
+    <artifactId>LSHDB</artifactId>
+    <version>1.0</version>
+</dependency>
+```
+
+
 Stores created by LSHDB can be accessed either in-line or using sockets. 
 In the in-line mode, using a simple initialization code snippet of the following form:
 ```
