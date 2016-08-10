@@ -88,7 +88,7 @@ we narrow the reults, which get closer to the query value ("John"):
 - Rachel St. __John__ Spatially explicit forest harvest scheduling with difference equations etc.
 
 
-In case one needs to run LSHDB as a server instance, then, should provide `config.xml` with the following minimum configuration:
+In case one needs to run LSHDB as a server instance, then, should provide the following minimum configuration:
 ```
 <server>
    <port>
@@ -118,7 +118,12 @@ In case one needs to run LSHDB as a server instance, then, should provide `confi
 Save the above snippet as `config.xml` into a folder `someFolder` and then run 
 `mvn exec:java  -Dexec.mainClass="gr.eap.LSHDB.Server" -Dexec.args="/someFolder/"`. A LSHDB instance will be fired up, hosting a single store, and listening on all network interfaces of the local machine on port 4443.
 
-
+The correpsonding client application should specify the server/port through a `client` object, and, in turn, submit the query.
+```
+Client client = new Client(server, port);
+Result result = client.queryServer(query);
+```
+Note that the `query` object holds the name of the store that will be queried. LSHDB doe not maintain any server-side persistent connections.
 
 
 For the interested reader, a research paper that deals with three LSH families in conjunction with PPRL is [An LSH-Based Blocking Approach with a Homomorphic Matching Technique for Privacy-Preserving Record Linkage](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6880802&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6880802), published by IEEE TKDE (Volume:27, Issue: 4, 2015).
