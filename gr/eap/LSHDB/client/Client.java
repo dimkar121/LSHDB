@@ -35,13 +35,14 @@ public class Client {
     private boolean isConnected = false;
     String server;
     int port;
-    String dbName;
     
-    public Client(String server,int port,String dbName) {        
+    
+    public Client(String server,int port) {        
             this.server = server;        
             this.port=port;
-            this.dbName=dbName;
+            //this.dbName=dbName;
     }
+    
 
     public Result queryServer(QueryRecord query) throws IOException, ClassNotFoundException{
        try{ 

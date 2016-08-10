@@ -159,7 +159,7 @@ class ClientFormApp extends JFrame {
 
         dScrollPane = new JScrollPane(detailsPanel);
 
-        final Client client = new Client(server, port, dbName);
+        final Client client = new Client(server, port);
         dbNames = (Vector<String>) client.submitCommand(Server_Thread.GET_INDEXED_DATABASES);
         final Timer stopper = new Timer(400, new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
