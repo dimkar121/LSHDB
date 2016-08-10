@@ -1,5 +1,5 @@
 # LSHDB
-LSHDB is a persistent data engine, which relies on the [Locality-Sensitive Hashing](https://en.wikipedia.org/wiki/Locality-sensitive_hashing) (LSH) technique and noSQL data stores, 
+LSHDB is a persistent data engine, which relies on the [locality-sensitive hashing](https://en.wikipedia.org/wiki/Locality-sensitive_hashing) (LSH) technique and noSQL data stores, 
 for performing [record linkage](https://en.wikipedia.org/wiki/Record_linkage) (including [privacy-preserving record linkage](https://www.cs.cmu.edu/~rjhall/linkage_survey_final.pdf) - PPRL) and similarity search tasks.
 
 The main features of LSHDB are:
@@ -31,7 +31,7 @@ String storeName = "dblp";
 String engine = "gr.eap.LSHDB.MapDB";
 HammingLSHStore lsh = new HammingLSHStore(folder, storeName, engine);
 ```
-one opens a database named `dblp`, which is stored under `/home/LSHDB/stores`, and is created using `Hamming LSH` and `MapDB` (http://www.mapdb.org) as the underlying LSH implementation and noSQL engine, respectively.
+one opens a database named `dblp`, which is stored under `/home/LSHDB/stores`, and is created using `Hamming LSH` and (`MapDB`)[http://www.mapdb.org] as the underlying LSH implementation and noSQL engine, respectively.
 
 
 In the following, we will showcase how one can (a) insert some records, and, then, (b) submit similarity queries to the `dblp` store.
