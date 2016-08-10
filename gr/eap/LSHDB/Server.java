@@ -27,7 +27,7 @@ public class Server {
     DataStore[] lsh;
     int c = 0;
 
-    public Server() {
+    public Server(String configDir) {
         Properties props = new Properties();
         FileInputStream in;
         //String folderName="c:";
@@ -42,8 +42,7 @@ public class Server {
         String[] LSHStores = null;
         //String[] remoteNodes = null;
         String[] indexFieldNames = null;
-
-        Config config = new Config("config.xml");
+        Config config = new Config(configDir+"config.xml");
         port = Integer.parseInt(config.get("port"));
         dbNames = config.getList("name");
         folders = config.getList("folder");
@@ -108,7 +107,10 @@ public class Server {
     }
 
     public static void main(String[] args) {
-        Server server = new Server();
+        String configDir = "";
+        if (args.length > 0)
+            configDir = args[0];
+        Server server = new Server(configDir);
         server.communicate();
     }
 }

@@ -90,7 +90,7 @@ public class BulkInsert {
 
 
                 if (authors.length > 1) { // We insert those first authors, who have at least one given name and one surname.                    
-                    rec.set("author_tokens", new String[]{authors[authors.length-1]});                
+                    rec.set("author"+Key.TOKENS, new String[]{authors[authors.length-1]});                
                     lsh.insert(rec);
                 }
 
