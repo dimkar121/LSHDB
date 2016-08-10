@@ -13,8 +13,7 @@ import org.apache.commons.math3.distribution.BinomialDistribution;
  * @author dimkar
  */
 public class HammingKey  extends Key{
-    public int t;
-    public int size;
+    public int t;    
     public int[][] samples;
     String[] tokens;
     
@@ -32,6 +31,9 @@ public class HammingKey  extends Key{
         this.performComparisons = performComparisons;      
     }
     
+    public HammingKey(String keyFieldName){
+        this(keyFieldName,30,.1,50,500,true,true);
+    }
     
     public void optimizeL() {
         L = (int) Math.ceil(Math.log(delta) / Math.log(1 - Math.pow((1.0 - (t * 1.0 / size)), k)));

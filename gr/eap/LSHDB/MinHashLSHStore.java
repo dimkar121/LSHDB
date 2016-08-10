@@ -82,50 +82,7 @@ public class MinHashLSHStore extends DataStore {
     }
 
     
-    
   
-
-    
-    public HashMap<String, BloomFilter[]> toBloomFilter(Record rec) {
-        HashMap<String, BloomFilter[]> bfMap = new HashMap<String, BloomFilter[]>();
-        boolean isKeyed = this.getConfiguration().isKeyed();
-        String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
-        ArrayList<String> fieldNames = rec.getFieldNames();
-        BloomFilter bf = new BloomFilter("", 1000, 10, 2, true);
-
-        for (int i = 0; i < fieldNames.size(); i++) {
-            String fieldName = fieldNames.get(i);
-            String s = (String) rec.get(fieldName);
-
-            if (hConf.isKeyed) {
-                for (int j = 0; j < keyFieldNames.length; j++) {
-                    String keyFieldName = keyFieldNames[j];
-                    if (keyFieldName.equals(fieldName)) {
-                        Key key = hConf.getKey(keyFieldName);
-                        boolean isTokenized = key.isTokenized();
-                        if (!isTokenized) {
-                            bfMap.put(keyFieldName, new BloomFilter[]{new BloomFilter(s, ((MinHashKey) key).size, 15, 2, true)});
-                        } else {
-                            String[] os = (String[]) rec.get(keyFieldName + Key.TOKENS);
-                            BloomFilter[] bfs = new BloomFilter[os.length];
-                            for (int k = 0; k < bfs.length; k++) {
-                                String v = os[k];
-                                bfs[k] = new BloomFilter(v, ((MinHashKey) key).size, 15, 2, true);
-                            }
-                            bfMap.put(keyFieldName, bfs);
-                        }
-                    }
-                }
-            } else {
-                bf.encode(s, true);
-            }
-        }
-        if (!isKeyed) {
-            bfMap.put(Configuration.RECORD_LEVEL, new BloomFilter[]{bf});
-        }
-
-        return bfMap;
-    }
 
     
     

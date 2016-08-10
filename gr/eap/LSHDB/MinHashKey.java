@@ -12,8 +12,7 @@ import java.util.Random;
  * @author dimkar
  */
 public class MinHashKey extends Key{
-    public double t;
-    public int size;
+    public double t;    
     public int permutationsNo = 0;
     public int[][][] permutations;
     String[] tokens;
@@ -33,7 +32,9 @@ public class MinHashKey extends Key{
         initPermutations(); 
     }
     
-    
+    public MinHashKey(String keyFieldName){
+        this(keyFieldName,5,.1,.60,500,true,true);
+    }
     
     public void optimizeL(){
         double p1 = Math.pow(1.0 - t, k);

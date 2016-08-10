@@ -26,7 +26,7 @@ public class BulkInsert {
         String folder = "c:/MAPDB";
         String dbName = "dblp";
         String engine = "gr.eap.LSHDB.MapDB";
-        Key key1 = new HammingKey("author", 30, .1, 50, 500, true, true);
+        Key key1 = new HammingKey("author");        
         //Key key2 = new HammingKey("title", 30, .1, 55, 500, true, true);
 
         HammingConfiguration hc = new HammingConfiguration(folder, dbName, engine, new Key[]{key1}, true);

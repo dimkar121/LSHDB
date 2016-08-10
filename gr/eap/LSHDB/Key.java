@@ -15,6 +15,7 @@ import java.util.Random;
 public abstract class Key implements Serializable{
     int L;
     int k;
+    int size;
     double delta; 
     String keyFieldName;
     boolean tokenized;
