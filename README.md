@@ -37,6 +37,7 @@ one opens a database named `dblp`, which is stored under `/home/LSHDB/stores`, a
 In the following, we will showcase how one can (a) insert some records, and, then, (b) submit similarity queries to the `dblp` store.
 
 a) Inserting records to the `dblp` store
+
 Assume a store that contains the titles of the publications contained in [DBLP](http://dblp.uni-trier.de/) along with the name of their first author. In order to support queries with respect to these names, we have to specify a keyed field, from which specialized data structures will be constructed and persisted. If one also needs to submit queries uisng the titles of the publications, then he/she should simply add an additional keyed field.
 ```
 Key key1 = new HammingKey("author");
@@ -60,7 +61,8 @@ lsh.close();
 The object `record` may store any kind of field depending on the running application; a publication may refer to a cenference `record.set("conference", conferenceInfo);` or to a journal `record.set("journal", journalInfo);`.
 
 b) Querying the `dblp` store
-Thw way to submit similarity queries against a store, using keyed fields, is as follows:
+
+The way to submit similarity queries against a store, using keyed fields, is as follows:
 ```
 QueryRecord query = new QueryRecord(storeName, 40); // 40 denotes the max number of the returned records.
 query.setKeyedField("author", new String[]{"John"},1.0,true);
