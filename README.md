@@ -95,27 +95,27 @@ In case one needs to run LSHDB as a server instance, then, should provide `confi
       4443
    </port>
 <stores>
-	<store>
-	   <name>
-	      dblp
-	   </name>  
-	   <folder>
-		   /home/LSHDB/stores
-	   </folder>
-	   <engine>
-	      gr.eap.LSHDB.MapDB
-	   </engine>
-	   <LSHStore>
-	      gr.eap.LSHDB.HammingLSHStore
-	   </LSHStore>
-	   <LSHConfiguration>
-	      gr.eap.LSHDB.HammingConfiguration
-	   </LSHConfiguration>	   	   
+  <store>
+     <name>
+         dblp
+     </name>  
+     <folder>
+          /home/LSHDB/stores
+     </folder>
+     <engine>
+          gr.eap.LSHDB.MapDB
+     </engine>
+     <LSHStore>
+          gr.eap.LSHDB.HammingLSHStore
+      </LSHStore>
+      <LSHConfiguration>
+          gr.eap.LSHDB.HammingConfiguration
+      </LSHConfiguration>	   	   
   </store>
  </stores> 
 </server>
 ```
-The above snippet fires up a LSHDB instance, which hosts a single store, on all network interfaces of the local machine listening on port 4443.
+Save the above snippet as `config.xml` inside the top folder of your maven project and then run `mvn exec:java  -Dexec.mainClass="gr.eap.LSHDB.Server"`. A LSHDB instance will be fired up, hosting a single store, and listening on all network interfaces of the local machine on port 4443.
 
 
 For the interested reader, a research paper that deals with three LSH families in conjunction with PPRL is [An LSH-Based Blocking Approach with a Homomorphic Matching Technique for Privacy-Preserving Record Linkage](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6880802&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6880802), published by IEEE TKDE (Volume:27, Issue: 4, 2015).
