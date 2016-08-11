@@ -117,8 +117,9 @@ In case one needs to run LSHDB as a server instance, then, should provide the fo
  </stores> 
 </server>
 ```
-Save the above snippet as `config.xml` into a folder `someFolder` and then run 
-`mvn exec:java  -Dexec.mainClass="gr.eap.LSHDB.Server" -Dexec.args="/someFolder/"`. A LSHDB instance will be fired up, hosting a single store, and listening on all network interfaces of the local machine on port 4443.
+Save the above snippet as `config.xml` into some folder and then run 
+`mvn exec:java  -Dexec.mainClass="gr.eap.LSHDB.Server" -Dexec.args="/someFolder/"`,
+which will fire up a LSHDB instance, hosting a single store, and listening on all network interfaces of the local machine on port 4443.
 
 The correpsonding client application should specify the server/port through a `client` object, and, in turn, submit the query.
 ```
