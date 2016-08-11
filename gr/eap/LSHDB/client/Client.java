@@ -9,7 +9,6 @@ package gr.eap.LSHDB.client;
  * @author 
  * 
  */
-import gr.eap.LSHDB.priv.*;
 import gr.eap.LSHDB.util.QueryRecord;
 import gr.eap.LSHDB.util.Record;
 import gr.eap.LSHDB.util.Result;

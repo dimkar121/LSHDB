@@ -6,7 +6,6 @@
 package gr.eap.LSHDB.client;
 
 // Imports
-import gr.eap.LSHDB.priv.*;
 import gr.eap.LSHDB.Key;
 import gr.eap.LSHDB.Server_Thread;
 import gr.eap.LSHDB.util.Record;
@@ -45,12 +44,11 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.java.dev.designgridlayout.DesignGridLayout;
 
-class ClientFormApp extends JFrame {
+public class ClientFormApp extends JFrame {
 
     // Instance attributes used in this example
     private JPanel topPanel;
     private JPanel dPanel = new JPanel();
-    private GTableModel dModel;
     private JTable dTable;
     private JScrollPane dScrollPane;
     TitledBorder tb;
@@ -125,7 +123,7 @@ class ClientFormApp extends JFrame {
 
     }
 
-    public ClientFormApp(String server, String[] labels, String[] fieldNames, char[] mnemonics, int[] widths, String[] descriptions) {
+    public ClientFormApp(String server) {
 
         this.labels = labels;
 
@@ -329,15 +327,10 @@ class ClientFormApp extends JFrame {
 
     // Main entry point for this example
     public static void main(String args[]) {
-        String[] labels = {};
-        String[] fieldNames = {};
-        char[] mnemonics = {};
-        int[] widths = {25, 25, 25, 25};
-        String[] descriptions = {};
         String server = "";
         if (args.length > 0)
             server = args[0];
-        ClientFormApp main = new ClientFormApp(server, labels, fieldNames, mnemonics, widths, descriptions);
+        ClientFormApp main = new ClientFormApp(server);
 
        
 
