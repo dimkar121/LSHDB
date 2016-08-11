@@ -9,9 +9,7 @@ package gr.eap.LSHDB.client;
 import gr.eap.LSHDB.priv.*;
 import gr.eap.LSHDB.Key;
 import gr.eap.LSHDB.Server_Thread;
-import gr.eap.LSHDB.util.FileUtil;
 import gr.eap.LSHDB.util.Record;
-import gr.eap.LSHDB.util.Property;
 import gr.eap.LSHDB.util.QueryRecord;
 import gr.eap.LSHDB.util.Result;
 import java.awt.BorderLayout;
@@ -19,10 +17,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.StringTokenizer;
 import java.util.Vector;
 import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
@@ -46,6 +41,8 @@ import javax.swing.Timer;
 import javax.swing.border.Border;
 
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import net.java.dev.designgridlayout.DesignGridLayout;
 
 class ClientFormApp extends JFrame {
@@ -62,7 +59,7 @@ class ClientFormApp extends JFrame {
     String server = "localhost";
     int port = 4443;
     boolean performComparisons = true;
-    String dbName = "dblp";
+    String dbName = "";
     int maxQueryRows = 20;
     String[] labels;
     //String[] fieldNames;
@@ -73,6 +70,8 @@ class ClientFormApp extends JFrame {
     JTextField[] textFields;
     JSlider[] sliders;
     JCheckBox[] checks;
+    JLabel[] sliderValues;
+    JLabel serverMsg = new JLabel("");    
     String timeLegend = " Time to retrieve the result set: ";
     JLabel timeMsg = new JLabel(timeLegend);
     String noRecsLegend = " Number of retrieved records: ";
@@ -86,6 +85,7 @@ class ClientFormApp extends JFrame {
     JSplitPane splitPane;
     JPanel formPanel;
     JPanel controlPanel;
+    private ChangeListener listener;
     
 
     public void handleResult(ArrayList<Record> r) {
@@ -125,18 +125,19 @@ class ClientFormApp extends JFrame {
 
     }
 
-    public ClientFormApp(String[] labels, String[] fieldNames, char[] mnemonics, int[] widths, String[] descriptions) {
+    public ClientFormApp(String server, String[] labels, String[] fieldNames, char[] mnemonics, int[] widths, String[] descriptions) {
 
         this.labels = labels;
 
         this.mnemonics = mnemonics;
         this.widths = widths;
         this.descriptions = descriptions;
-      
-
+        if ((server!=null) && (!server.equals("")))
+           this.server = server;  
+        serverMsg.setText(" Server: "+this.server);
         setTitle("Queries");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1000, 700);
+        setSize(1150, 700);
         setBackground(Color.gray);
 
         // Create a panel to hold all other components
@@ -159,7 +160,7 @@ class ClientFormApp extends JFrame {
 
         dScrollPane = new JScrollPane(detailsPanel);
 
-        final Client client = new Client(server, port);
+        final Client client = new Client(this.server, this.port);
         dbNames = (Vector<String>) client.submitCommand(Server_Thread.GET_INDEXED_DATABASES);
         final Timer stopper = new Timer(400, new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
@@ -204,15 +205,17 @@ class ClientFormApp extends JFrame {
 
                 textFields = new JTextField[indexFieldNames.length];
                 sliders = new JSlider[indexFieldNames.length];
+                sliderValues = new JLabel[indexFieldNames.length];
                 checks = new JCheckBox[indexFieldNames.length];
 
-
-
-                //JPanel labelPanel = new JPanel(new GridLayout(indexFieldNames.length + 2, 1));
-                //JPanel fieldPanel = new JPanel(new GridLayout(indexFieldNames.length + 2, 1 + 1));
-                //form.add(labelPanel, BorderLayout.WEST);
-                //form.add(fieldPanel, BorderLayout.CENTER);
-
+                listener = new ChangeListener() {
+                        public void stateChanged(ChangeEvent event) {
+                            JSlider source = (JSlider) event.getSource();
+                            int i = Integer.parseInt(source.getClientProperty("custom_Id").toString());
+                            sliderValues[i].setText("" + source.getValue());
+                        }
+                    };
+                
                 for (int i = 0; i < indexFieldNames.length; i++) {
                     String indexFieldName = indexFieldNames[i];
                     JLabel lab = new JLabel(indexFieldName, JLabel.RIGHT);
@@ -221,14 +224,20 @@ class ClientFormApp extends JFrame {
                     textFields[i].setName(indexFieldName);
                     textFields[i].setColumns(25);
                     sliders[i] = new JSlider(10, 100, 80);
+                    sliders[i].setPaintTicks(true);
+                    sliders[i].setMajorTickSpacing(50);
+                    sliders[i].setMinorTickSpacing(10);                                        
+                    sliders[i].addChangeListener(listener);
+                    sliders[i].putClientProperty("custom_Id",i);
+                    sliderValues[i] = new JLabel(sliders[i].getValue()+"");                    
                     checks[i] = new JCheckBox();
                     checks[i].setSelected(performComparisons);
-                    checks[i].setToolTipText("perform comparisons");
-
-                    queryLayout.row().grid(new JLabel(indexFieldName)).add(textFields[i]).add(sliders[i]).add(checks[i]);
-
-
+                    checks[i].setToolTipText("perform comparisons");                    
+                    queryLayout.row().grid(new JLabel(indexFieldName)).add(textFields[i]).add(sliders[i]).add(sliderValues[i]);
                 }
+                
+                             
+                
                 
 
                 textFields[0].requestFocusInWindow();
@@ -292,7 +301,7 @@ class ClientFormApp extends JFrame {
         leftToRight.addComponent(dbButt);
 
 
-
+        leftToRight.addComponent(serverMsg);        
         leftToRight.addComponent(noRecsMsg);
         leftToRight.addComponent(timeMsg);
         layout.setHorizontalGroup(leftToRight);
@@ -325,7 +334,10 @@ class ClientFormApp extends JFrame {
         char[] mnemonics = {};
         int[] widths = {25, 25, 25, 25};
         String[] descriptions = {};
-        ClientFormApp main = new ClientFormApp(labels, fieldNames, mnemonics, widths, descriptions);
+        String server = "";
+        if (args.length > 0)
+            server = args[0];
+        ClientFormApp main = new ClientFormApp(server, labels, fieldNames, mnemonics, widths, descriptions);
 
        
 
