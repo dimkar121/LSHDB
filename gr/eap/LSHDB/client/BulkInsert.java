@@ -8,8 +8,8 @@ import gr.eap.LSHDB.HammingConfiguration;
 import gr.eap.LSHDB.HammingKey;
 import gr.eap.LSHDB.HammingLSHStore;
 import gr.eap.LSHDB.Key;
+import gr.eap.LSHDB.StoreInitException;
 import gr.eap.LSHDB.util.FileUtil;
-import gr.eap.LSHDB.util.Property;
 import gr.eap.LSHDB.util.Record;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -23,18 +23,18 @@ import java.util.StringTokenizer;
 public class BulkInsert {
 
     public static void main(String[] args) {
-        String folder = "c:/MAPDB";
-        String dbName = "dblp";
-        String engine = "gr.eap.LSHDB.MapDB";
-        Key key1 = new HammingKey("author");        
-        //Key key2 = new HammingKey("title", 30, .1, 55, 500, true, true);
-
-        HammingConfiguration hc = new HammingConfiguration(folder, dbName, engine, new Key[]{key1}, true);
-        hc.saveConfiguration();
-
-        HammingLSHStore lsh = new HammingLSHStore(folder, dbName, engine, hc, true);
-
         try {
+            String folder = "c:/MAPDB";
+            String dbName = "dblp";
+            String engine = "gr.eap.LSHDB.MapDB";
+            Key key1 = new HammingKey("author");
+            //Key key2 = new HammingKey("title", 30, .1, 55, 500, true, true);
+
+            HammingConfiguration hc = new HammingConfiguration(folder, dbName, engine, new Key[]{key1}, true);
+            hc.saveConfiguration();
+
+            HammingLSHStore lsh = new HammingLSHStore(folder, dbName, engine, hc, true);
+
             String file = "c://voters//dblp.txt"; // Specify  the full path of dblp.txt   
 
             int lines = FileUtil.countLines(file);
@@ -65,14 +65,11 @@ public class BulkInsert {
                     pages = st1.nextToken().trim();
                 }
 
-
                 Record rec = new Record();
                 rec.setId(id);
 
-
                 rec.set("author", author);
                 String[] authors = author.split(" ");
-                
 
                 rec.set("year", year);
 
@@ -80,7 +77,6 @@ public class BulkInsert {
                 //String[] titles = title.split(" ");
                 //rec.set("title_tokens", titles);
 
-                
                 rec.set("pages", pages);
                 if (type.equals("article")) {
                     rec.set("journal", journal);
@@ -88,19 +84,17 @@ public class BulkInsert {
                     rec.set("conference or workshop", journal);
                 }
 
-
                 if (authors.length > 1) { // We insert those first authors, who have at least one given name and one surname.                    
-                    rec.set("author"+Key.TOKENS, new String[]{authors[authors.length-1]});                
+                    rec.set("author" + Key.TOKENS, new String[]{authors[authors.length - 1]});
                     lsh.insert(rec);
                 }
 
-
                 System.out.println(i);
-
 
             }
             lsh.close();
-
+        }catch (StoreInitException ex){
+             ex.getMessage();
         } catch (Exception e) {//Catch exception if any
             e.printStackTrace();
         }

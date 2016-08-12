@@ -107,7 +107,7 @@ public class JSON {
             }
             //System.out.println(ss);
         } else {
-            s = toJSON(Result.STATUS_DATABASE_NOT_FOUND);
+            s = toJSON(Result.STATUS_STORE_NOT_FOUND);
         }
        return s;
     }

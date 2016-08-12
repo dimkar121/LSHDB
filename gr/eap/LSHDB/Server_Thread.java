@@ -103,8 +103,8 @@ public class Server_Thread extends Thread {
                 
                 result = new Result(this.query);
                 if (db == null) {
-                    result.setStatus(Result.STATUS_DATABASE_NOT_FOUND);
-                    result.setMsg("The database " + dbName + " does not exist.");
+                    result.setStatus(Result.STATUS_STORE_NOT_FOUND);
+                    result.setMsg("The specified store " + dbName + " does not exist.");
                     ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
                     outputStream.writeObject(result);
                     socket.close();

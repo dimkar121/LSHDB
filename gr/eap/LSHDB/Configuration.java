@@ -58,63 +58,74 @@ public abstract class Configuration implements Serializable {
         db.close();
     }
 
-    public Configuration(String folder, String dbName, String dbEngine, boolean massInsertMode) {
-        this.folder = folder;
-        this.dbName = dbName;
-        db = DataStoreFactory.build(folder, dbName, "conf", dbEngine, massInsertMode);
+    public Configuration(String folder, String dbName, String dbEngine, boolean massInsertMode) throws StoreInitException {
+        try {
+            this.folder = folder;
+            this.dbName = dbName;
+            db = DataStoreFactory.build(folder, dbName, "conf", dbEngine, massInsertMode);
 
-        if (db.contains(Configuration.KEY_NAMES)) {
-            this.keyFieldNames = (String[]) db.get(Configuration.KEY_NAMES);
-        }
-
-        if (db.contains(Configuration.KEY_MODE)) {
-            this.isKeyed = (boolean) db.get(Configuration.KEY_MODE);
-        }
-
-        if (keyFieldNames != null) {
-            for (int i = 0; i < this.keyFieldNames.length; i++) {
-                String keyFieldName = this.keyFieldNames[i];
-                keys.put(keyFieldName, (Key) db.get("conf_" + keyFieldName));
+            if (db.contains(Configuration.KEY_NAMES)) {
+                this.keyFieldNames = (String[]) db.get(Configuration.KEY_NAMES);
             }
 
-        }
-    }
-
-    public Configuration(String folder, String dbName, String dbEngine, Key[] keysList, boolean massInsertMode) {
-        this.folder = folder;
-        this.dbName = dbName;
-        db = DataStoreFactory.build(folder, dbName, "conf", dbEngine, massInsertMode);
-
-        if (db.contains(Configuration.KEY_NAMES)) {
-            this.keyFieldNames = (String[]) db.get(Configuration.KEY_NAMES);
-            for (int i = 0; i < this.keyFieldNames.length; i++) {
-                String keyFieldName = this.keyFieldNames[i];
-                this.keys.put(keyFieldName, (Key) db.get("conf_" + keyFieldName));
-            }
             if (db.contains(Configuration.KEY_MODE)) {
                 this.isKeyed = (boolean) db.get(Configuration.KEY_MODE);
             }
-            if (db.contains(Configuration.PRIVATE_MODE)) {
-                this.setPrivateMode();
-            }
 
-        } else {
-            this.keyFieldNames = new String[keysList.length];
-            for (int i = 0; i < keysList.length; i++) {
-                this.keyFieldNames[i] = keysList[i].getKeyFieldName();
-                keys.put(keyFieldNames[i], keysList[i]);
-                db.set("conf_" + this.keyFieldNames[i], keysList[i]);
-                if (this.keyFieldNames[0].equals(Configuration.RECORD_LEVEL)) {
-                    this.isKeyed = false;
-                } else {
-                    this.isKeyed = true;
+            if (keyFieldNames != null) {
+                for (int i = 0; i < this.keyFieldNames.length; i++) {
+                    String keyFieldName = this.keyFieldNames[i];
+                    keys.put(keyFieldName, (Key) db.get("conf_" + keyFieldName));
                 }
+
             }
-            db.set(Configuration.KEY_MODE, this.isKeyed);
-            db.set(Configuration.KEY_NAMES, this.keyFieldNames);
-
+        } catch (ClassNotFoundException ex) {
+            throw new StoreInitException("Decalred class " + dbEngine + " not found.");
+        } catch (NoSuchMethodException ex) {
+            throw new StoreInitException("The particular constructor cannot be found in the decalred class " + dbEngine + ".");
         }
-
     }
 
+    public Configuration(String folder, String dbName, String dbEngine, Key[] keysList, boolean massInsertMode) throws StoreInitException {
+        try {
+            this.folder = folder;
+            this.dbName = dbName;
+            db = DataStoreFactory.build(folder, dbName, "conf", dbEngine, massInsertMode);
+
+            if (db.contains(Configuration.KEY_NAMES)) {
+                this.keyFieldNames = (String[]) db.get(Configuration.KEY_NAMES);
+                for (int i = 0; i < this.keyFieldNames.length; i++) {
+                    String keyFieldName = this.keyFieldNames[i];
+                    this.keys.put(keyFieldName, (Key) db.get("conf_" + keyFieldName));
+                }
+                if (db.contains(Configuration.KEY_MODE)) {
+                    this.isKeyed = (boolean) db.get(Configuration.KEY_MODE);
+                }
+                if (db.contains(Configuration.PRIVATE_MODE)) {
+                    this.setPrivateMode();
+                }
+
+            } else {
+                this.keyFieldNames = new String[keysList.length];
+                for (int i = 0; i < keysList.length; i++) {
+                    this.keyFieldNames[i] = keysList[i].getKeyFieldName();
+                    keys.put(keyFieldNames[i], keysList[i]);
+                    db.set("conf_" + this.keyFieldNames[i], keysList[i]);
+                    if (this.keyFieldNames[0].equals(Configuration.RECORD_LEVEL)) {
+                        this.isKeyed = false;
+                    } else {
+                        this.isKeyed = true;
+                    }
+                }
+                db.set(Configuration.KEY_MODE, this.isKeyed);
+                db.set(Configuration.KEY_NAMES, this.keyFieldNames);
+
+            }
+        } catch (ClassNotFoundException ex) {
+            throw new StoreInitException("Decalred class " + dbEngine + " not found.");
+        } catch (NoSuchMethodException ex) {
+            throw new StoreInitException("The particular constructor cannot be found in the decalred class " + dbEngine + ".");
+        }
+    }
+    
 }

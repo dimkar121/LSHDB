@@ -5,8 +5,7 @@
  */
 package gr.eap.LSHDB;
 
-import gr.eap.LSHDB.util.Property;
-import java.util.Properties;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  *
@@ -14,20 +13,20 @@ import java.util.Properties;
  */
 public class DataStoreFactory {
 
-    public static StoreEngine build(String folder, String dbName, String file, String dbEngine,boolean massInsertMode) {
+    public static StoreEngine build(String folder, String dbName, String file, String dbEngine,boolean massInsertMode) throws ClassNotFoundException, NoSuchMethodException {
         try {
             Class c = Class.forName(dbEngine);
             StoreEngine db = (StoreEngine) c.getConstructor(String.class,String.class,String.class,boolean.class).newInstance(folder,dbName,file,massInsertMode);
             
             return db;
-        } catch (ClassNotFoundException ex) {
-            System.err.println(ex + " DataFactory class must be in class path.");
+        //} catch (ClassNotFoundException ex) {
+         //   System.err.println(ex + " DataFactory class must be in class path.");
         } catch (InstantiationException ex) {
             System.err.println(ex + " DataFacory class must be concrete.");
         } catch (IllegalAccessException ex) {
             System.err.println(ex + " DataFactory class must have a no-arg constructor.");
         }
-        catch (Exception ex){
+        catch (InvocationTargetException ex){
             ex.printStackTrace();
         }
         return null;

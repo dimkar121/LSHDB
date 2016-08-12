@@ -22,7 +22,7 @@ import java.util.Set;
 public class Result implements Serializable {
 
     public static int STATUS_OK = 0;
-    public static int STATUS_DATABASE_NOT_FOUND = 1;
+    public static int STATUS_STORE_NOT_FOUND = 1;
 
     public QueryRecord queryRecord;
 

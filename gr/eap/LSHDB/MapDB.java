@@ -84,6 +84,7 @@ public class MapDB implements StoreEngine {
             pathToDB = folder + System.getProperty("file.separator") + dbName;
             File theDir = new File(pathToDB);
             if (!theDir.exists()) {
+                System.out.println("Path to the store "+pathToDB+" not found. A new store will be created.");
                 theDir.mkdir();
             }
             fileName = pathToDB + System.getProperty("file.separator") + entity;

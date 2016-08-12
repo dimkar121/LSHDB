@@ -8,6 +8,7 @@ package gr.eap.LSHDB.client;
 // Imports
 import gr.eap.LSHDB.Key;
 import gr.eap.LSHDB.Server_Thread;
+import gr.eap.LSHDB.StoreInitException;
 import gr.eap.LSHDB.util.Record;
 import gr.eap.LSHDB.util.QueryRecord;
 import gr.eap.LSHDB.util.Result;
@@ -16,6 +17,8 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Vector;
 import javax.swing.BorderFactory;
@@ -53,14 +56,13 @@ public class ClientFormApp extends JFrame {
     private JScrollPane dScrollPane;
     TitledBorder tb;
     WaitLayerUI layerUI;
-    JLayer<JComponent> jlayer;      
+    JLayer<JComponent> jlayer;
     String server = "localhost";
     int port = 4443;
     boolean performComparisons = true;
     String dbName = "";
     int maxQueryRows = 20;
     String[] labels;
-    //String[] fieldNames;
     String[] descriptions;
     char[] mnemonics;
     int[] widths;
@@ -69,13 +71,11 @@ public class ClientFormApp extends JFrame {
     JSlider[] sliders;
     JCheckBox[] checks;
     JLabel[] sliderValues;
-    JLabel serverMsg = new JLabel("");    
+    JLabel serverMsg = new JLabel("");
     String timeLegend = " Time to retrieve the result set: ";
     JLabel timeMsg = new JLabel(timeLegend);
     String noRecsLegend = " Number of retrieved records: ";
     JLabel noRecsMsg = new JLabel(noRecsLegend);
-    //HammingLSHDB db=new HammingLSHDB("c:/tmp","testBer",null);
-    //HammingLSHDB db = new HammingLSHDB("c:", "testV", null);
     JPanel detailsPanel = new JPanel();
     DesignGridLayout designLayout = new DesignGridLayout(detailsPanel);
     JPanel qPanel = new JPanel();
@@ -84,7 +84,6 @@ public class ClientFormApp extends JFrame {
     JPanel formPanel;
     JPanel controlPanel;
     private ChangeListener listener;
-    
 
     public void handleResult(ArrayList<Record> r) {
         detailsPanel = new JPanel();
@@ -99,16 +98,14 @@ public class ClientFormApp extends JFrame {
             }
         }
 
-
         for (int j = 0; j < r.size(); j++) {
             Record rec = r.get(j);
-
 
             designLayout.row().grid(new JLabel(rec.getIdFieldName())).add(new JLabel(rec.getId())).empty();
             for (int x = 0; x < rec.getFieldNames().size(); x++) {
                 String fieldName = rec.getFieldNames().get(x);
                 String v = (String) rec.get(fieldName);
-                JLabel jLab = new JLabel(fieldName);                
+                JLabel jLab = new JLabel(fieldName);
                 if (rec.isRemote()) {
                     jLab.setForeground(Color.red);
                 }
@@ -118,21 +115,19 @@ public class ClientFormApp extends JFrame {
 
         }
 
-
-
-
     }
 
-    public ClientFormApp(String server) {
+    public ClientFormApp(String serverInstance) {
 
         this.labels = labels;
 
         this.mnemonics = mnemonics;
         this.widths = widths;
         this.descriptions = descriptions;
-        if ((server!=null) && (!server.equals("")))
-           this.server = server;  
-        serverMsg.setText(" Server: "+this.server);
+        if ((serverInstance != null) && (!serverInstance.equals(""))) {
+            this.server = serverInstance;
+        }
+        serverMsg.setText(" Server: " + this.server);
         setTitle("Queries");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(1150, 700);
@@ -155,16 +150,27 @@ public class ClientFormApp extends JFrame {
         splitPane = new JSplitPane();
         splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
 
-
         dScrollPane = new JScrollPane(detailsPanel);
 
         final Client client = new Client(this.server, this.port);
-        dbNames = (Vector<String>) client.submitCommand(Server_Thread.GET_INDEXED_DATABASES);
+        try {
+            dbNames = (Vector<String>) client.submitCommand(Server_Thread.GET_INDEXED_DATABASES);
+        } catch (ConnectException cex) {
+            System.out.println(Client.CONNECTION_ERROR_MSG);
+            System.out.println("Specified server: " + server);
+            System.out.println("You should either check its availability, or resolve any possible network issues.");
+            System.exit(0);
+        } catch (UnknownHostException uhex) {
+            System.out.println(Client.UNKNOWNHOST_ERROR_MSG);
+            System.exit(0);
+        }
+
         final Timer stopper = new Timer(400, new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 layerUI.stop();
             }
         });
+
         stopper.setRepeats(false);
 
         final JComboBox jcombo = new JComboBox(dbNames);
@@ -173,30 +179,36 @@ public class ClientFormApp extends JFrame {
         JButton dbButt = new JButton("Fetch keyed fields");
         final JPanel form = new JPanel(new BorderLayout());
 
-
-
-
         dbButt.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {              
+            public void actionPerformed(ActionEvent e) {
                 formPanel = new JPanel(new BorderLayout());
-                formPanel.add(controlPanel, BorderLayout.NORTH);               
-                qPanel=new JPanel();
+                formPanel.add(controlPanel, BorderLayout.NORTH);
+                qPanel = new JPanel();
                 tb = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
                         "keyed fields",
                         TitledBorder.CENTER,
                         TitledBorder.TOP);
                 qPanel.setBorder(tb);
                 queryLayout = new DesignGridLayout(qPanel);
-               
-                for (int i = 0; i < qPanel.getComponentCount(); i++) {
-                    Component c = qPanel.getComponent(i);                    
-                    qPanel.remove(c);
-                    
-                }
 
-                //form.removeAll();
+                for (int i = 0; i < qPanel.getComponentCount(); i++) {
+                    Component c = qPanel.getComponent(i);
+                    qPanel.remove(c);
+
+                }
                 dbName = (String) jcombo.getSelectedItem();
-                final String[] indexFieldNames = (String[]) client.submitCommand(Server_Thread.GET_INDEXED_FIELDS + dbName);
+                String[] indexFieldNames = null;
+                try {
+                    indexFieldNames = (String[]) client.submitCommand(Server_Thread.GET_INDEXED_FIELDS + dbName);
+                } catch (ConnectException cex) {
+                    System.out.println(Client.CONNECTION_ERROR_MSG);
+                    System.out.println("Specified server: " + server);
+                    System.out.println("You should either check its availability, or resolve any possible network issues.");
+                    System.exit(0);
+                } catch (UnknownHostException uhex) {
+                    System.out.println(Client.UNKNOWNHOST_ERROR_MSG);
+                    System.exit(0);
+                }
                 if (indexFieldNames == null) {
                     return;
                 }
@@ -207,13 +219,13 @@ public class ClientFormApp extends JFrame {
                 checks = new JCheckBox[indexFieldNames.length];
 
                 listener = new ChangeListener() {
-                        public void stateChanged(ChangeEvent event) {
-                            JSlider source = (JSlider) event.getSource();
-                            int i = Integer.parseInt(source.getClientProperty("custom_Id").toString());
-                            sliderValues[i].setText("" + source.getValue());
-                        }
-                    };
-                
+                    public void stateChanged(ChangeEvent event) {
+                        JSlider source = (JSlider) event.getSource();
+                        int i = Integer.parseInt(source.getClientProperty("custom_Id").toString());
+                        sliderValues[i].setText("" + source.getValue());
+                    }
+                };
+
                 for (int i = 0; i < indexFieldNames.length; i++) {
                     String indexFieldName = indexFieldNames[i];
                     JLabel lab = new JLabel(indexFieldName, JLabel.RIGHT);
@@ -224,19 +236,15 @@ public class ClientFormApp extends JFrame {
                     sliders[i] = new JSlider(10, 100, 80);
                     sliders[i].setPaintTicks(true);
                     sliders[i].setMajorTickSpacing(50);
-                    sliders[i].setMinorTickSpacing(10);                                        
+                    sliders[i].setMinorTickSpacing(10);
                     sliders[i].addChangeListener(listener);
-                    sliders[i].putClientProperty("custom_Id",i);
-                    sliderValues[i] = new JLabel(sliders[i].getValue()+"");                    
+                    sliders[i].putClientProperty("custom_Id", i);
+                    sliderValues[i] = new JLabel(sliders[i].getValue() + "");
                     checks[i] = new JCheckBox();
                     checks[i].setSelected(performComparisons);
-                    checks[i].setToolTipText("perform comparisons");                    
+                    checks[i].setToolTipText("perform comparisons");
                     queryLayout.row().grid(new JLabel(indexFieldName)).add(textFields[i]).add(sliders[i]).add(sliderValues[i]);
                 }
-                
-                             
-                
-                
 
                 textFields[0].requestFocusInWindow();
                 JButton submit = new JButton("Submit");
@@ -258,7 +266,7 @@ public class ClientFormApp extends JFrame {
                         if (!stopper.isRunning()) {
                             stopper.start();
                         }
-                        dPanel.repaint();                       
+                        dPanel.repaint();
                         QueryRecord query = new QueryRecord(dbName, maxQueryRows);
                         for (int i = 0; i < textFields.length; i++) {
                             String name = textFields[i].getName();
@@ -276,63 +284,62 @@ public class ClientFormApp extends JFrame {
                         Result r = null;
                         try {
                             r = client.queryServer(query);
+                            if (r.getStatus() == Result.STATUS_STORE_NOT_FOUND)
+                                throw new StoreInitException("The specified store "+dbName+" not found.");
                             noRecsMsg.setText(noRecsLegend + r.getRecords().size());
                             timeMsg.setText(timeLegend + r.getTime());
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
+                            handleResult(r.getRecords());
+                        } catch (ConnectException cex) {
+                            System.out.println(Client.CONNECTION_ERROR_MSG);
+                            System.out.println("Specified server: " + server);
+                            System.out.println("You should either check its availability, or resolve any possible network issues.");
+                            System.exit(0);
+                        } catch (UnknownHostException uhex) {
+                            System.out.println(Client.UNKNOWNHOST_ERROR_MSG);
+                            System.exit(0);
+                        } catch (StoreInitException ex) {
+                            System.out.println(ex.getMessage());
                         }
-                        handleResult(r.getRecords());
+                        
                     }
                 });
                 form.repaint();
+
                 form.revalidate();
             }
-        });
+        }
+        );
 
         controlPanel = new JPanel();
         Border bevelBorder = BorderFactory.createRaisedBevelBorder();
+
         controlPanel.setBorder(bevelBorder);
         GroupLayout layout = new GroupLayout(controlPanel);
         SequentialGroup leftToRight = layout.createSequentialGroup();
         leftToRight.addComponent(dbNamesLab);
         leftToRight.addComponent(jcombo);
         leftToRight.addComponent(dbButt);
-
-
-        leftToRight.addComponent(serverMsg);        
+        leftToRight.addComponent(serverMsg);
         leftToRight.addComponent(noRecsMsg);
         leftToRight.addComponent(timeMsg);
         layout.setHorizontalGroup(leftToRight);
-
-
         formPanel = new JPanel(new BorderLayout());
-        formPanel.add(controlPanel, BorderLayout.NORTH);       
-        
-
-
-
+        formPanel.add(controlPanel, BorderLayout.NORTH);
         splitPane.setTopComponent(formPanel);
         splitPane.setBottomComponent(dScrollPane);
-        //splitPane.setBottomComponent(detailsPanel);        
         splitPane.setDividerLocation(200);
-
-
-
-
         getContentPane().add(splitPane);
         jlayer = new JLayer<JComponent>(splitPane, layerUI);
         add(jlayer);
-
     }
 
-    // Main entry point for this example
+// Main entry point for this example
     public static void main(String args[]) {
         String server = "";
-        if (args.length > 0)
+        if (args.length > 0) {
             server = args[0];
+        }
         ClientFormApp main = new ClientFormApp(server);
-
-       
 
         // Create an instance of the test application
         main.setVisible(true);

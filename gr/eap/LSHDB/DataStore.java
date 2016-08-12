@@ -70,7 +70,7 @@ public abstract class DataStore {
         return keyMap.get(fieldName);
     }
 
-    public void setKeyMap(String fieldName,boolean massInsertMode) {
+    public void setKeyMap(String fieldName,boolean massInsertMode) throws NoSuchMethodException, ClassNotFoundException  {
         fieldName = fieldName.replaceAll(" ", "");
         keyMap.put(fieldName, DataStoreFactory.build(folder, dbName, "keys_" + fieldName, dbEngine,massInsertMode));
     }
@@ -80,12 +80,13 @@ public abstract class DataStore {
         return dataMap.get(fieldName);
     }
 
-    public void setDataMap(String fieldName, boolean massInsertMode) {
+    public void setDataMap(String fieldName, boolean massInsertMode) throws NoSuchMethodException, ClassNotFoundException{
         fieldName = fieldName.replaceAll(" ", "");
         dataMap.put(fieldName, DataStoreFactory.build(folder, dbName, "data_" + fieldName, dbEngine,massInsertMode));
     }
 
-    public void init(String dbEngine,boolean massInsertMode) throws SecurityException {
+    public void init(String dbEngine,boolean massInsertMode) throws StoreInitException {
+       try{ 
         this.dbEngine = dbEngine;
         pathToDB = folder + System.getProperty("file.separator") + dbName;
         records = DataStoreFactory.build(folder, dbName, "records", dbEngine,massInsertMode);
@@ -103,7 +104,12 @@ public abstract class DataStore {
             dataMap.put("recordLevel", data);
 
         }
-
+       }catch(ClassNotFoundException ex){
+            throw new StoreInitException("Decalred class "+dbEngine +" not found.");
+       } 
+       catch(NoSuchMethodException ex){
+            throw new StoreInitException("The particular constructor cannot be found in the decalred class "+dbEngine+".");
+       }
     }
 
     public void persist(){
