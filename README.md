@@ -31,7 +31,7 @@ String storeName = "dblp";
 String engine = "gr.eap.LSHDB.MapDB";
 HammingLSHStore lsh = new HammingLSHStore(folder, storeName, engine);
 ```
-one opens a database named `dblp`, which is stored under `/home/LSHDB/stores`, and is created using `Hamming LSH` and (`MapDB`)[http://www.mapdb.org] as the underlying LSH implementation and noSQL engine, respectively.
+one opens a database named `dblp`, which is stored under `/home/LSHDB/stores`, and is created using `Hamming LSH` and `MapDB`[http://www.mapdb.org] as the underlying LSH implementation and noSQL engine, respectively.
 
 
 In the following, we will showcase how one can (a) insert some records, and, then, (b) submit similarity queries to the `dblp` store.
@@ -64,7 +64,7 @@ b) Querying the `dblp` store
 
 The way to submit similarity queries against a store, using keyed fields, is as follows:
 ```
-QueryRecord query = new QueryRecord(storeName, 40); // 40 denotes the max number of the returned records.
+QueryRecord query = new QueryRecord(40); // 40 denotes the max number of the returned records.
 query.setKeyedField("author", new String[]{"John"},1.0,true);
 Result result = lsh.query(query);
 result.prepare();  
@@ -118,7 +118,9 @@ In case one needs to run LSHDB as a server instance, then, should provide the fo
 </server>
 ```
 Save the above snippet as `config.xml` into some folder and then run 
+
 `mvn exec:java  -Dexec.mainClass="gr.eap.LSHDB.Server" -Dexec.args="/someFolder/"`,
+
 which will fire up a LSHDB instance, hosting a single store, and listening on all network interfaces of the local machine on port 4443.
 
 The correpsonding client application should specify the server/port through a `client` object, and, in turn, submit the query.
@@ -126,7 +128,8 @@ The correpsonding client application should specify the server/port through a `c
 Client client = new Client(server, port);
 Result result = client.queryServer(query);
 ```
-Note that the `query` object holds the name of the store that will be queried. LSHDB does not maintain any server-side persistent connections. Method `queryServer` throws a pair of checked exceptions (`ConnectException` and `UnknownHostException`) which are omitted for brevity.
+Note that the `query` object holds the name of the store that will be queried. LSHDB does not maintain any server-side persistent connections. 
 
+In all the above listings, the handling of any checked thrown exceptions (such as `StoreInitxception`, `ConnectException`, `UnknownHostException` etc.) is omitted for brevity.
 
 For the interested reader, a research paper that deals with three LSH families in conjunction with PPRL is [An LSH-Based Blocking Approach with a Homomorphic Matching Technique for Privacy-Preserving Record Linkage](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6880802&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6880802), published by IEEE TKDE (Volume:27, Issue: 4, 2015).
