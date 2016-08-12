@@ -1,4 +1,8 @@
 # LSHDB
+
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/gr.eap.LSHDB/LSHDB/badge.svg)]http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22gr.eap.LSHDB%22)
+
+
 LSHDB is a persistent data engine, which relies on the [locality-sensitive hashing](https://en.wikipedia.org/wiki/Locality-sensitive_hashing) (LSH) technique and noSQL data stores, 
 for performing [record linkage](https://en.wikipedia.org/wiki/Record_linkage) (including [privacy-preserving record linkage](https://www.cs.cmu.edu/~rjhall/linkage_survey_final.pdf) - PPRL) and similarity search tasks.
 
