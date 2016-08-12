@@ -12,7 +12,7 @@ The main features of LSHDB are:
 * __Suport of the PPRL mode__  In the case of PPRL, each participating party, termed also as a data custodian, may send its records, which have been previously masked, to a Trusted Third Party (TTP). The TTP configures and uses LSHDB for performing the linkage task and eventually sending the results back to the respective data custodians.
 * __Ease of use__  Queries can be submitted against a data store using just four lines of code.
 * _Similarity sliding__  The developer can specify the desired level of similarity between the query and the returned values by using the similarity sliding feature. 
-* __Polymorphism of the response__  The result set can be returned either in terms of Java objects, or in JSON \cite{json} format for interoperability purposes.
+* __Polymorphism of the response__  The result set can be returned either in terms of Java objects, or in JSON format for interoperability purposes.
 * __Support of distributed queries__  A query can be forwarded to multiple instances of LSHDB to support data stores that have been horizontally partitioned into multiple compute nodes.
 * __Support of storing structured and semi-structured data__  A data store may contain homogeneous or heterogeneous data.
 
