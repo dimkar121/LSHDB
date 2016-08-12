@@ -130,6 +130,6 @@ Result result = client.queryServer(query);
 ```
 Note that the `query` object holds the name of the store that will be queried. LSHDB does not maintain any server-side persistent connections. 
 
-In all the above listings, the handling of any checked thrown exceptions (such as `StoreInitxception`, `ConnectException`, `UnknownHostException` etc.) is omitted for brevity.
+In all the above listings, the handling of any checked thrown exceptions (such as `StoreInitException`, `ConnectException`, `UnknownHostException` etc.) is omitted for brevity.
 
 For the interested reader, a research paper that deals with three LSH families in conjunction with PPRL is [An LSH-Based Blocking Approach with a Homomorphic Matching Technique for Privacy-Preserving Record Linkage](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6880802&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6880802), published by IEEE TKDE (Volume:27, Issue: 4, 2015).
