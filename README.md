@@ -10,7 +10,7 @@ The main features of LSHDB are:
 * _Similarity sliding__  The developer can specify the desired level of similarity between the query and the returned values by using the similarity sliding feature. 
 * __Polymorphism of the response__  The result set can be returned either in terms of Java objects, or in JSON \cite{json} format for interoperability purposes.
 * __Support of distributed queries__  A query can be forwarded to multiple instances of LSHDB to support data stores that have been horizontally partitioned into multiple compute nodes.
-* __Support of storing structured and semi-structured data__  Each record of a data store may contain homogeneous or heterogeneous data.
+* __Support of storing structured and semi-structured data__  A data store may contain homogeneous or heterogeneous data.
 
 
 The dependency info for downloading the jar (ver. 1.0) from the central maven repo is:
@@ -58,7 +58,7 @@ lsh.insert(record);
 
 lsh.close();
 ```
-The object `record` may store any kind of field depending on the running application; a publication may refer to a cenference `record.set("conference", conferenceInfo);` or to a journal `record.set("journal", journalInfo);`.
+The object `record` may store any kind of fields depending on the running application; a publication may refer to a cenference `record.set("conference", conferenceInfo);` or to a journal `record.set("journal", journalInfo);`.
 
 b) Querying the `dblp` store
 
