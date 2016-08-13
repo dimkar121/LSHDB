@@ -19,10 +19,15 @@ import org.codehaus.jackson.map.ObjectMapper;
 public class JSON {
     
     public static String JSON_REQUEST = "/JSON/";
+    public static String MAX_NO_RESULTS = "maxNoRes";
+    public static String RETURNED_FIELD = "returnField";
+    public static String SIMILARITY_SLIDING_PERCENTAGE = "simPer";    
+    public static String CALLBACK = "callback";
 
+    
+    
      public String toJSON(Object o) {
         ObjectMapper mapper = new ObjectMapper();
-        
         //Object to JSON in String
         String jsonInString = "";
         try {
@@ -51,7 +56,7 @@ public class JSON {
     }
     
     
-    public String convert(String msg, int queryNo, DataStore db) {
+    public String convert(String msg, DataStore db) {
         //System.out.println("JSON= " + msg);
         String s = "";
         msg = msg.replaceAll(JSON_REQUEST, "");
@@ -59,10 +64,25 @@ public class JSON {
         msg = msg.replaceAll(dbName, "");
         msg = msg.replaceAll("\\?", "");
         msg = msg.substring(0, msg.indexOf(' '));
-        QueryRecord query = new QueryRecord(dbName, queryNo);
-        String callback = URLUtil.getRequestKey(msg, "callback");
-        String returnField = URLUtil.getRequestKey(msg, "returnField");
-
+        String callback = URLUtil.getRequestKey(msg, CALLBACK);
+        String returnField = URLUtil.getRequestKey(msg, RETURNED_FIELD);
+        int simPercentage = 100;
+        try{
+           simPercentage=Integer.parseInt(URLUtil.getRequestKey(msg, SIMILARITY_SLIDING_PERCENTAGE));        
+        }catch(NumberFormatException ex){
+            simPercentage = 100;
+        }   
+        int maxNoResults = 20;
+        try{
+            maxNoResults = Integer.parseInt(URLUtil.getRequestKey(msg, MAX_NO_RESULTS));
+        }catch(NumberFormatException ex){
+             maxNoResults = 20;
+        }               
+        
+        QueryRecord query = new QueryRecord(dbName, maxNoResults);
+        double sim = simPercentage * 1.0 / 100;
+        
+        
         Map<String, String> m = URLUtil.splitQuery(msg);
 
         if (db != null) {
@@ -75,8 +95,9 @@ public class JSON {
                     String value = (String) pair.getValue();
                     //System.out.println("name="+pair.getKey()+" value=" + value + ".");
                     String[] values = value.split(" ");
-                    query.set(pair.getKey() + "", value, 1.0, true);
-                    query.set(pair.getKey() + "_tokens", values, 1.0, true);
+                    
+                    query.set(pair.getKey() + "", value, sim, true);
+                    query.set(pair.getKey() + "_tokens", values, sim, true);
                 } else {
                     query.set(pair.getKey() + "", pair.getValue());
                 }
@@ -85,7 +106,7 @@ public class JSON {
             }
 
             if (!db.getConfiguration().isKeyed) {
-                query.set(1.0, true);
+                query.set(sim, true);
             }
 
             long tStartInd = System.nanoTime();

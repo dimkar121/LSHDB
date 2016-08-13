@@ -18,7 +18,7 @@ public class QueryRecord extends Record {
     int maxQueryRows;
     String dbName;
     
-    
+    public static String QUERY_VALUE = "_Query";
     //String[] keyFieldNames;
     HashMap<String, QueryValueConf> conf = new HashMap<String, QueryValueConf>();
     ArrayList<String> queryFieldNames = new ArrayList<String>(); 

@@ -22,8 +22,10 @@ public class URLUtil {
                 int idx = pair.indexOf("=");
                 String key = pair.substring(0, idx);
                 String value = pair.substring(idx + 1);
-                if ((! key.equals("callback")) && (! key.equals("_")) && (! key.equals("returnField"))    )
-                    query_pairs.put(URLDecoder.decode(key, "UTF-8"), URLDecoder.decode(value, "UTF-8"));
+                if (key.endsWith(QueryRecord.QUERY_VALUE)){
+                      key = key.replace(QueryRecord.QUERY_VALUE,"");
+                      query_pairs.put(URLDecoder.decode(key, "UTF-8"), URLDecoder.decode(value, "UTF-8"));
+                }      
             }
             return query_pairs;
         } catch (Exception ex) {

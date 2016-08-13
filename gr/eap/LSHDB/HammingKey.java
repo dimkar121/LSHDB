@@ -32,7 +32,7 @@ public class HammingKey  extends Key{
     }
     
     public HammingKey(String keyFieldName){
-        this(keyFieldName,30,.1,50,500,true,true);
+        this(keyFieldName,30,.1,75,700,true,true);
     }
     
     public void optimizeL() {

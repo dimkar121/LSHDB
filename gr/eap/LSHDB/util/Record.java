@@ -22,52 +22,56 @@ import org.codehaus.jackson.map.ObjectMapper;
  *
  * @author dimkar
  */
-public class Record implements Serializable{
+public class Record implements Serializable {
 
-    @JsonIgnore   
+    @JsonIgnore
     public HashMap<String, Object> record = new HashMap<String, Object>();
-    
-    
-    @JsonIgnore   
-    public HashMap<String,Integer> notIndexedFields = new HashMap<String,Integer>();
 
+    @JsonIgnore
+    public HashMap<String, Integer> notIndexedFields = new HashMap<String, Integer>();
 
-    @JsonIgnore   
+    @JsonIgnore
     public static String PRIVATE_STRUCTURE = "PRIVATE";
-    
+
     @JsonValue
-    public HashMap toJsonObject(){
+    public HashMap toJsonObject() {
+        Iterator<Map.Entry<String, Object>> iter = record.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry<String, Object> entry = iter.next();
+            if ((entry.getKey().endsWith(Key.TOKENS))) {
+                iter.remove();
+            }
+        }
         return record;
     }
 
     @JsonIgnore
     boolean remote = false;
-    
+
     @JsonIgnore
-    public boolean isRemote(){
+    public boolean isRemote() {
         return remote;
     }
-    
+
     @JsonIgnore
-    public void setRemote(){
-        remote=true;
+    public void setRemote() {
+        remote = true;
     }
-    
+
     @JsonIgnore
     public void set(String fieldName, Object fieldValue) {
         record.put(fieldName, fieldValue);
     }
-    
+
     @JsonIgnore
     public void setNotIndexedField(String fieldName) {
-        notIndexedFields.put(fieldName,1);
+        notIndexedFields.put(fieldName, 1);
     }
-    
+
     @JsonIgnore
     public boolean isNotIndexedField(String fieldName) {
         return notIndexedFields.containsKey(fieldName);
     }
-    
 
     @JsonIgnore
     public Object get(String fieldName) {
@@ -75,32 +79,31 @@ public class Record implements Serializable{
     }
 
     @JsonIgnore
-    public String getIdFieldName(){
+    public String getIdFieldName() {
         return "Id";
     }
-    
+
     @JsonIgnore
-    public String getId(){
+    public String getId() {
         return (String) record.get("Id");
     }
-    
+
     @JsonIgnore
-    public void setId(String id){
-        record.put("Id",id);
+    public void setId(String id) {
+        record.put("Id", id);
     }
-    
-        
-   
+
     @JsonIgnore
-    public ArrayList<String> getFieldNames(){
-        ArrayList<String> arr=new ArrayList<String>();
+    public ArrayList<String> getFieldNames() {
+        ArrayList<String> arr = new ArrayList<String>();
         Iterator it = record.entrySet().iterator();
         while (it.hasNext()) {
-           Map.Entry pair = (Map.Entry)it.next();
-           String fieldName = (String) pair.getKey();
-           if (! fieldName.equals("Id") && (! fieldName.endsWith(Key.TOKENS)) )
-               arr.add(fieldName);
-        }   
+            Map.Entry pair = (Map.Entry) it.next();
+            String fieldName = (String) pair.getKey();
+            if (!fieldName.equals("Id") && (!fieldName.endsWith(Key.TOKENS))) {
+                arr.add(fieldName);
+            }
+        }
         return arr;
     }
 }

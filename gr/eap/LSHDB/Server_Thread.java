@@ -134,7 +134,7 @@ public class Server_Thread extends Thread {
                 if (msg.startsWith(JSON.JSON_REQUEST)) {
                     JSON json = new JSON();
                     String dbName = json.getDbName(msg);
-                    String s = json.convert(msg, 20, getDB(dbName));
+                    String s = json.convert(msg, getDB(dbName));
                     sendMsgAsStream(s);
                     socket.close();
                     return;
