@@ -161,7 +161,7 @@ For the interested reader, we suggest the following research papers:
 * [A fast and efficient Hamming LSH-based scheme for accurate linkage](http://link.springer.com/article/10.1007/s10115-016-0919-y), published by KAIS (2016).
 * [Efficient Record Linkage Using a Compact Hamming Space](https://openproceedings.org/2016/conf/edbt/paper-56.pdf), presented in EDBT (2016).
 * [An LSH-Based Blocking Approach with a Homomorphic Matching Technique for Privacy-Preserving Record Linkage](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6880802&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6880802), published by IEEE TKDE (Volume:27, Issue: 4, 2015).
-* 
+ 
 
 ![LSHDB](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Sierpinski_deep.svg/128px-Sierpinski_deep.svg.png)
 ######By Sega sai (Own work) [CC BY-SA 3.0 (http://creativecommons.org/licenses/by-sa/3.0) or GFDL (http://www.gnu.org/copyleft/fdl.html)], via Wikimedia Commons **
