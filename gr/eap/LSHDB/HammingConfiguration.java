@@ -15,7 +15,7 @@ import java.util.HashMap;
  */
 public class HammingConfiguration extends Configuration implements Serializable {
     
-    
+    public static final long serialVersionUID = 1001L;
     
     public HammingConfiguration(String folder, String dbName, String dbEngine, boolean massInsertMode) throws StoreInitException {
         super(folder, dbName, dbEngine,massInsertMode);  

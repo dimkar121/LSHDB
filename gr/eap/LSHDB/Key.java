@@ -13,6 +13,9 @@ import java.util.Random;
  * @author dimkar
  */
 public abstract class Key implements Serializable{
+    
+    public static final long serialVersionUID = 50L;
+    
     int L;
     int k;
     int size;

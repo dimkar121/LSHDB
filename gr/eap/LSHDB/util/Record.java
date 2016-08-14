@@ -23,7 +23,9 @@ import org.codehaus.jackson.map.ObjectMapper;
  * @author dimkar
  */
 public class Record implements Serializable {
-
+    @JsonIgnore
+    public static final long serialVersionUID = 1000L;
+    
     @JsonIgnore
     public HashMap<String, Object> record = new HashMap<String, Object>();
 

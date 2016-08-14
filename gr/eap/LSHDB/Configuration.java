@@ -16,6 +16,8 @@ import java.util.concurrent.ConcurrentMap;
  */
 public abstract class Configuration implements Serializable {
 
+    public static final long serialVersionUID = 100L;
+    
     String folder;
     String dbName;
     StoreEngine db;

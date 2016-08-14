@@ -20,7 +20,9 @@ import java.util.Set;
  * @author dimkar
  */
 public class Result implements Serializable {
-
+    
+    public static final long serialVersionUID = 555L; 
+    
     public static int STATUS_OK = 0;
     public static int STORE_NOT_FOUND = 1;
     public static int NO_QUERY_VALUES_SPECIFIED = 2;

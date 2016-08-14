@@ -15,7 +15,7 @@ import java.util.HashMap;
  */
 public class MinHashConfiguration extends Configuration implements Serializable {
     
-    
+    public static final long serialVersionUID = 1002L;
     
     public MinHashConfiguration(String folder, String dbName, String dbEngine, boolean massInsertMode) throws StoreInitException {
         super(folder, dbName, dbEngine,massInsertMode);  

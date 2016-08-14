@@ -12,6 +12,9 @@ import java.io.Serializable;
  * @author dimkar
  */
 public class QueryValueConf implements Serializable{
+    
+    public static final long serialVersionUID = 999L;
+    
      double userPercentageThreshold=0.0;
      boolean performComparisons;
      

@@ -20,6 +20,7 @@ import java.util.PriorityQueue;
  */
 public class RecordList implements Serializable{
      
+    public static final long serialVersionUID = 888L;
     
     int maxQueryRows;
     boolean performComparisons;    
