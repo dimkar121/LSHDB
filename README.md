@@ -1,4 +1,5 @@
-https://upload.wikimedia.org/wikipedia/commons/d/d1/Sierpinski_deep.svg
+[url=https://commons.wikimedia.org/wiki/File%3ASierpinski_deep.svg][img]https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Sierpinski_deep.svg/128px-Sierpinski_deep.svg.png[/img][/url]
+[url=https://commons.wikimedia.org/wiki/File%3ASierpinski_deep.svg]Sierpinski deep[/url] [CC BY-SA 3.0 (http://creativecommons.org/licenses/by-sa/3.0) or GFDL (http://www.gnu.org/copyleft/fdl.html)], by Sega sai (Own work), from Wikimedia Commons
 # LSHDB 
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/gr.eap.LSHDB/LSHDB/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22gr.eap.LSHDB%22)
