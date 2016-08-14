@@ -38,9 +38,10 @@ HammingLSHStore lsh = new HammingLSHStore(folder, storeName, engine);
 one opens a database named `dblp`, which is stored under `/home/LSHDB/stores`, and is created using `Hamming LSH` and `MapDB`[http://www.mapdb.org] as the underlying LSH implementation and noSQL engine, respectively.
 
 
-In the following, we will showcase how one can (a) insert some records, and, then, (b) submit similarity queries to the `dblp` store.
+In the following, using the  we will showcase how one can insert some records, and submit similarity queries either by using Java objects or by performing asynchronous `AJAX` requests.
 
-##a) Inserting records to the `dblp` store
+
+##Inserting records into a store
 
 Assume a store that contains the titles of the publications contained in [DBLP](http://dblp.uni-trier.de/) along with the name of their first author. In order to support queries with respect to these names, we have to specify a keyed field, from which specialized data structures will be constructed and persisted. If one also needs to submit queries uisng the titles of the publications, then he/she should simply add an additional keyed field.
 ```java
@@ -64,7 +65,7 @@ lsh.close();
 ```
 The object `record` may store any kind of fields depending on the running application; a publication may refer to a cenference `record.set("conference", conferenceInfo);` or to a journal `record.set("journal", journalInfo);`.
 
-##b) Querying the `dblp` store
+##Querying a store
 
 The way to submit similarity queries against a store, using keyed fields, is as follows:
 ```java
@@ -93,7 +94,7 @@ we narrow the reults, which get closer to the query value ("John"):
 - Michael __Johnson__ Unifying Set-Based  Delta-Based and Edit-Based Lenses
 - Rachel St. __John__ Spatially explicit forest harvest scheduling with difference equations etc.
 
-
+##Running LSHDB as a server isntance
 In case one needs to run LSHDB as a server instance, then, should provide the following minimum configuration:
 ```xml
 <server>
@@ -126,28 +127,25 @@ Note that the `query` object holds the name of the store that will be queried. L
 
 In all the above listings, the handling of any checked thrown exceptions (such as `StoreInitException`, `ConnectException`, `UnknownHostException` etc.) is omitted for brevity.
 
-##c) Performing asynchronous `AJAX` requests
+
+##Performing asynchronous `AJAX` requests
 Assuming a fully functional instance running on `localhost` at port `4443`, which hosts the `dblp` store, one by submitting the url `http://localhost:4443/JSON/dblp?author_Query=John` through a web browser, receives the results in `JSON` format. A more advanced option is to use `jquery` as follows:
 ```javascript
     $.ajax({
-	    url:"http://"+server+":"+port+"/JSON/dblp",
-		type:"get",
-		data:{author_Query: $('#authorText').val()},
+	url:"http://"+server+":"+port+"/JSON/dblp",
+	type:"get",
+	data:{author_Query: $('#authorText').val()},
         dataType: 'jsonp', 
         success: function(json) {
-					   if (json.error){
-					       out="Error: "+json.errorMessage;
-					   } else { 
-		                  if (json.length==0){
-					         out="No rows returned.";
-					      } else {	   
-					        out="<table>"; 	  
-						    for(i = 0; i < json.length; i++) {
-						        out += "<tr><td>"+(i+1)+".</td><td>" +  json[i].author + "</td><td>" + json[i].title + "</td><td>" +  json[i].year +   "</td></tr>";
-						    }
-                           out += "</table>";
-					    }
-					 }
+			if (json.error){
+			        out="Error: "+json.errorMessage;
+			} else { 
+		                out="<table>"; 	  
+			        for(i = 0; i < json.length; i++) {
+				        out += "<tr><td>"+(i+1)+".</td><td>" +  json[i].author + "</td><td>" + json[i].title + "</td><td>" +  json[i].year +   "</td></tr>";
+			         }
+                           	out += "</table>";
+			}
                      document.getElementById("id01").innerHTML = out;
         }
     });
