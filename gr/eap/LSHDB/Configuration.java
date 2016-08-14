@@ -55,6 +55,9 @@ public abstract class Configuration implements Serializable {
     }
 
     public void saveConfiguration() {
+        close();
+    }
+    public void close(){
         db.close();
     }
 

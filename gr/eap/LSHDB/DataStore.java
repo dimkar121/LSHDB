@@ -265,7 +265,7 @@ public abstract class DataStore {
 
     public abstract void hash(String id, Object data, String keyFieldName);
 
-    public abstract Result query(QueryRecord queryRecord);
+    public abstract Result query(QueryRecord queryRecord) throws NoKeyedFieldsException;
 
     public abstract void insert(Record rec);
 

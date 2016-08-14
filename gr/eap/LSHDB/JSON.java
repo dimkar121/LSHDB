@@ -17,16 +17,16 @@ import org.codehaus.jackson.map.ObjectMapper;
  * @author dimkar
  */
 public class JSON {
-    
+
     public static String JSON_REQUEST = "/JSON/";
     public static String MAX_NO_RESULTS = "maxNoRes";
     public static String RETURNED_FIELD = "returnField";
-    public static String SIMILARITY_SLIDING_PERCENTAGE = "simPer";    
+    public static String SIMILARITY_SLIDING_PERCENTAGE = "simPer";
     public static String CALLBACK = "callback";
-
+    public static String ERROR = "error";
+    public static String ERROR_MSG = "errorMessage";    
     
-    
-     public String toJSON(Object o) {
+    public String toJSON(Object o) {
         ObjectMapper mapper = new ObjectMapper();
         //Object to JSON in String
         String jsonInString = "";
@@ -48,16 +48,21 @@ public class JSON {
         }
         return map;
     }
-    
-    public String getDbName(String msg){
+
+    public HashMap parseError(String msg, int error) {
+        HashMap m = new HashMap();
+        m.put(ERROR, error);
+        m.put(ERROR_MSG, msg);        
+        return m;
+    }
+
+    public String getDbName(String msg) {
         msg = msg.replaceAll(JSON_REQUEST, "");
         String dbName = msg.substring(0, msg.indexOf("?"));
         return dbName;
     }
-    
-    
+
     public String convert(String msg, DataStore db) {
-        //System.out.println("JSON= " + msg);
         String s = "";
         msg = msg.replaceAll(JSON_REQUEST, "");
         String dbName = msg.substring(0, msg.indexOf("?"));
@@ -66,72 +71,89 @@ public class JSON {
         msg = msg.substring(0, msg.indexOf(' '));
         String callback = URLUtil.getRequestKey(msg, CALLBACK);
         String returnField = URLUtil.getRequestKey(msg, RETURNED_FIELD);
-        int simPercentage = 100;
-        try{
-           simPercentage=Integer.parseInt(URLUtil.getRequestKey(msg, SIMILARITY_SLIDING_PERCENTAGE));        
-        }catch(NumberFormatException ex){
-            simPercentage = 100;
-        }   
-        int maxNoResults = 20;
-        try{
-            maxNoResults = Integer.parseInt(URLUtil.getRequestKey(msg, MAX_NO_RESULTS));
-        }catch(NumberFormatException ex){
-             maxNoResults = 20;
-        }               
-        
-        QueryRecord query = new QueryRecord(dbName, maxNoResults);
-        double sim = simPercentage * 1.0 / 100;
-        
-        
-        Map<String, String> m = URLUtil.splitQuery(msg);
+        try {
+            int simPercentage = 100;
+            try {
+                simPercentage = Integer.parseInt(URLUtil.getRequestKey(msg, SIMILARITY_SLIDING_PERCENTAGE));
+            } catch (NumberFormatException ex) {
+                simPercentage = 100;
+            }
+            int maxNoResults = 20;
+            try {
+                maxNoResults = Integer.parseInt(URLUtil.getRequestKey(msg, MAX_NO_RESULTS));
+            } catch (NumberFormatException ex) {
+                maxNoResults = 20;
+            }
 
-        if (db != null) {
-            Iterator it = m.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry pair = (Map.Entry) it.next();
-                query.set(pair.getKey() + "", pair.getValue());
+            QueryRecord query = new QueryRecord(dbName, maxNoResults);
+            double sim = simPercentage * 1.0 / 100;
 
-                if (db.getConfiguration().isKeyed) {
-                    String value = (String) pair.getValue();
-                    //System.out.println("name="+pair.getKey()+" value=" + value + ".");
-                    String[] values = value.split(" ");
-                    
-                    query.set(pair.getKey() + "", value, sim, true);
-                    query.set(pair.getKey() + "_tokens", values, sim, true);
+            Map<String, String> m = URLUtil.splitQuery(msg);
+
+            if (db != null) {
+                if (m.entrySet().size() > 0) {
+                    Iterator it = m.entrySet().iterator();
+                    while (it.hasNext()) {
+                        Map.Entry pair = (Map.Entry) it.next();
+                        query.set(pair.getKey() + "", pair.getValue());
+
+                        if (db.getConfiguration().isKeyed) {
+                            String value = (String) pair.getValue();
+                            //System.out.println("name="+pair.getKey()+" value=" + value + ".");
+                            String[] values = value.split(" ");
+
+                            query.set(pair.getKey() + "", value, sim, true);
+                            query.set(pair.getKey() + Key.TOKENS, values, sim, true);
+                        } else {
+                            query.set(pair.getKey() + "", pair.getValue());
+                        }
+
+                        //System.out.println(pair.getKey() + " = " + pair.getValue());
+                    }
                 } else {
-                    query.set(pair.getKey() + "", pair.getValue());
+                    throw new JSONException(Result.NO_QUERY_VALUES_SPECIFIED_ERROR_MSG, Result.NO_QUERY_VALUES_SPECIFIED);
+                }
+                if (!db.getConfiguration().isKeyed) {
+                    query.set(sim, true);
                 }
 
-                //System.out.println(pair.getKey() + " = " + pair.getValue());
-            }
+                long tStartInd = System.nanoTime();
+                 Result result=null;
+                try{
+                   result = db.query(query);
+                }catch(NoKeyedFieldsException ex){
+                     throw new JSONException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG, Result.NO_KEYED_FIELDS_SPECIFIED);
+                }   
+                result.setStatus(Result.STATUS_OK);
+                long tEndInd = System.nanoTime();
+                long elapsedTimeInd = tEndInd - tStartInd;
+                double secondsInd = elapsedTimeInd / 1.0E09;
+                result.setTime(secondsInd);
+                System.out.println("Query completed in " + secondsInd + " secs.");
+                result.prepare();
+                if (returnField != null) {
+                    s = toJSON(result.getUniqueRecords(returnField));
+                } else {
+                    s = toJSON(result.getRecords());
+                }
 
-            if (!db.getConfiguration().isKeyed) {
-                query.set(sim, true);
-            }
-
-            long tStartInd = System.nanoTime();
-            Result result = db.query(query);
-            result.setStatus(Result.STATUS_OK);
-            long tEndInd = System.nanoTime();
-            long elapsedTimeInd = tEndInd - tStartInd;
-            double secondsInd = elapsedTimeInd / 1.0E09;
-            result.setTime(secondsInd);
-            System.out.println("Query completed in " + secondsInd + " secs.");
-            result.prepare();
-            if (returnField != null) {
-                s = toJSON(result.getUniqueRecords(returnField));
+                //System.out.println(ss);
             } else {
-                s = toJSON(result.getRecords());
+                throw new JSONException(Result.STORE_NOT_FOUND_ERROR_MSG, Result.STORE_NOT_FOUND);
             }
             if (callback != null) {
                 s = callback + " ( " + s + " ) ";
             }
-            //System.out.println(ss);
-        } else {
-            s = toJSON(Result.STATUS_STORE_NOT_FOUND);
+        } catch (JSONException ex) {
+            HashMap h = parseError(ex.getMessage(), ex.error);
+            s = toJSON(h);
+            System.out.println(ERROR + ": " + ex.getMessage());
+            if (callback != null) {
+                s = callback + " ( " + s + " ) ";
+            }
+            return s;
         }
-       return s;
+        return s;
     }
-    
-    
+
 }

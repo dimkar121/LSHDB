@@ -215,7 +215,7 @@ public class MinHashLSHStore extends DataStore {
 
     
     @Override
-    public Result query(QueryRecord queryRecord) {
+    public Result query(QueryRecord queryRecord) throws NoKeyedFieldsException{
         StoreEngine hashKeys = keys;
         StoreEngine dataKeys = data;
         HashMap<String, BloomFilter[]> bfMap = null; 
@@ -228,6 +228,8 @@ public class MinHashLSHStore extends DataStore {
         HashSet set = new HashSet<Record>();
         ArrayList<Record> finalRecordList = new ArrayList<Record>();
         ArrayList<String> fieldNames = queryRecord.getFieldNames();
+        if ((fieldNames.size()==0) && (hConf.isKeyed))
+               throw new NoKeyedFieldsException("");
         for (int i = 0; i < fieldNames.size(); i++) {
             String fieldName = fieldNames.get(i);
             if (keyFieldNames != null) {

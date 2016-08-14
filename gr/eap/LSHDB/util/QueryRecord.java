@@ -18,6 +18,14 @@ public class QueryRecord extends Record {
     int maxQueryRows;
     String dbName;
     
+    boolean clientQuery = true;
+    public boolean isClientQuery() {
+        return clientQuery;
+    }   
+    public void setServerQuery() {
+        clientQuery = false;
+    }
+    
     public static String QUERY_VALUE = "_Query";
     //String[] keyFieldNames;
     HashMap<String, QueryValueConf> conf = new HashMap<String, QueryValueConf>();

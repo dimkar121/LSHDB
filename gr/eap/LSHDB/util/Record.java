@@ -32,6 +32,9 @@ public class Record implements Serializable {
 
     @JsonIgnore
     public static String PRIVATE_STRUCTURE = "PRIVATE";
+    @JsonIgnore
+    public static String REMOTE_RECORD = "remote";
+
 
     @JsonValue
     public HashMap toJsonObject() {
@@ -42,12 +45,14 @@ public class Record implements Serializable {
                 iter.remove();
             }
         }
+        record.put(REMOTE_RECORD,remote);
         return record;
     }
 
     @JsonIgnore
     boolean remote = false;
 
+        
     @JsonIgnore
     public boolean isRemote() {
         return remote;

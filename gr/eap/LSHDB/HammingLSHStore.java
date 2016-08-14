@@ -5,24 +5,15 @@
  */
 package gr.eap.LSHDB;
 
-import gr.eap.LSHDB.util.FileUtil;
-import gr.eap.LSHDB.util.Property;
+import gr.eap.LSHDB.util.ListUtil;
 import gr.eap.LSHDB.util.QueryRecord;
 import gr.eap.LSHDB.util.Result;
 import gr.eap.LSHDB.util.Record;
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.StringTokenizer;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
  *
@@ -206,7 +197,7 @@ public class HammingLSHStore extends DataStore {
     }
 
     @Override
-    public Result query(QueryRecord queryRecord) {
+    public Result query(QueryRecord queryRecord) throws NoKeyedFieldsException{
         StoreEngine hashKeys = keys;
         StoreEngine dataKeys = data;
         HashMap<String, BloomFilter[]> bfMap = null; 
@@ -219,6 +210,13 @@ public class HammingLSHStore extends DataStore {
         HashSet set = new HashSet<Record>();
         ArrayList<Record> finalRecordList = new ArrayList<Record>();
         ArrayList<String> fieldNames = queryRecord.getFieldNames();
+        
+        if ((fieldNames.size()==0) && (hConf.isKeyed))
+               throw new NoKeyedFieldsException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);
+        if(ListUtil.intersection(fieldNames, Arrays.asList(keyFieldNames)).size()==0  && (hConf.isKeyed)){
+               throw new NoKeyedFieldsException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);                
+        }        
+        
         for (int i = 0; i < fieldNames.size(); i++) {
             String fieldName = fieldNames.get(i);
             if (keyFieldNames != null) {

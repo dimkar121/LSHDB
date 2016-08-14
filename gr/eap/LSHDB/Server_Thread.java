@@ -6,7 +6,7 @@ package gr.eap.LSHDB;
 
 /**
  *
- * @author dimkar Each query received by Server_RDS is allocated to a Thread of 
+ * @author dimkar 
  */
 import gr.eap.LSHDB.util.QueryRecord;
 import gr.eap.LSHDB.util.Result;
@@ -25,14 +25,14 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 public class Server_Thread extends Thread {
 
-    public static String GET_INDEXED_FIELDS = "GET INDEXED FIELDS FROM _";
-    public static String GET_INDEXED_DATABASES = "GET INDEXED DATABASES";
+    public static String GET_KEYED_FIELDS = "GET KEYED FIELDS FROM _";
+    public static String GET_KEYED_STORES = "GET KEYED STORES";
     private Socket socket = null;
     private QueryRecord query;
     private DataStore[] lsh;
     private Result result;
 
-    public Server_Thread(String name, Socket socket, DataStore[] lsh) {        
+    public Server_Thread(String name, Socket socket, DataStore[] lsh) {
         this.socket = socket;
         System.out.println("Connection from: " + this.socket.getInetAddress().getHostAddress());
         this.lsh = lsh;
@@ -50,8 +50,6 @@ public class Server_Thread extends Thread {
         }
         return null;
     }
-
-   
 
     public void sendMsgAsObject(Object response) throws IOException {
         ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
@@ -87,43 +85,47 @@ public class Server_Thread extends Thread {
             }
 
         } catch (IOException e) {
-            System.out.println("IOException Raised.");
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
-            System.out.println("ClassNotFoundException Raised.");
             e.printStackTrace();
         }
 
         try {
 
             if (stream instanceof QueryRecord) {
-                this.query = (QueryRecord) stream;
-                String dbName = this.query.getDbName();                
-                DataStore db = getDB(dbName);
-                
-                result = new Result(this.query);
-                if (db == null) {
-                    result.setStatus(Result.STATUS_STORE_NOT_FOUND);
-                    result.setMsg("The specified store " + dbName + " does not exist.");
+                try {
+                    this.query = (QueryRecord) stream;
+                    String dsName = this.query.getDbName();
+                    DataStore db = getDB(dsName);
+                    if (db == null) {
+                        throw new StoreInitException(Result.STORE_NOT_FOUND_ERROR_MSG + "(" + dsName + ")");
+                    }
+
+                    result = new Result(this.query);
+                    result.setStatus(Result.STATUS_OK);
+                    long tStartInd = System.nanoTime();
+                    try {
+                        result = db.query(query);
+                    } catch (NoKeyedFieldsException ex) {
+                        result.setStatus(Result.NO_KEYED_FIELDS_SPECIFIED);
+                    }
+                    long tEndInd = System.nanoTime();
+                    long elapsedTimeInd = tEndInd - tStartInd;
+                    double secondsInd = elapsedTimeInd / 1.0E09;
+                    result.setTime(secondsInd);
+                    System.out.println("Query completed in " + secondsInd + " secs.");
+                    ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+                    result.prepare();
+                    outputStream.writeObject(result);
+                    outputStream.close();
+                } catch (StoreInitException ex) {
+                    result.setStatus(Result.STORE_NOT_FOUND);
+                    result.setMsg(Result.STORE_NOT_FOUND_ERROR_MSG);
                     ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
                     outputStream.writeObject(result);
-                    socket.close();
-                    return;
+                    //socket.close();
+                    //return;
                 }
-                
-                
-                result.setStatus(Result.STATUS_OK);
-                long tStartInd = System.nanoTime();                                
-                result = db.query(query);
-                long tEndInd = System.nanoTime();
-                long elapsedTimeInd = tEndInd - tStartInd;
-                double secondsInd = elapsedTimeInd / 1.0E09;
-                result.setTime(secondsInd);
-                System.out.println("Query completed in " + secondsInd + " secs.");
-                ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
-                result.prepare();
-                outputStream.writeObject(result);
-                outputStream.close();
 
             }
 
@@ -151,7 +153,7 @@ public class Server_Thread extends Thread {
                     sendMsgAsObject(response);
                 }
 
-                if (msg.equals("GET INDEXED DATABASES")) {
+                if (msg.equals(GET_KEYED_STORES)) {
                     Vector<String> dbs = new Vector<String>();
                     for (int i = 0; i < lsh.length; i++) {
                         if (lsh[i].getConfiguration().isKeyed()) {
@@ -161,30 +163,19 @@ public class Server_Thread extends Thread {
                     sendMsgAsObject(dbs);
                 }
 
-                if (msg.startsWith(GET_INDEXED_FIELDS)) {
+                if (msg.startsWith(GET_KEYED_FIELDS)) {
                     String dbName = msg.substring(msg.indexOf("_") + 1);
                     DataStore lsh = getDB(dbName);
                     sendMsgAsObject(lsh.getConfiguration().getKeyFieldNames());
                 }
 
-                if (msg.equals("SHOW STATS")) {
-                    for (int i = 0; i < lsh.length; i++) {
-                        response.append(lsh[i].getDbName() + "\r\n");
-                        //response.append("keys=" + lsh[i].keys.count() + "\r\n");
-                        response.append("records=" + lsh[i].records.count() + "\r\n");
-                        response.append("==============================\r\n");
-                    }
-                    sendMsgAsObject(response);
-                }
 
             }
 
             socket.close();
 
         } catch (IOException ex2) {
-            System.out.println("IOException Raised.");
             ex2.printStackTrace();
         }
-
     }
 }

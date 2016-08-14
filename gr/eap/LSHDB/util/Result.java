@@ -22,7 +22,14 @@ import java.util.Set;
 public class Result implements Serializable {
 
     public static int STATUS_OK = 0;
-    public static int STATUS_STORE_NOT_FOUND = 1;
+    public static int STORE_NOT_FOUND = 1;
+    public static int NO_QUERY_VALUES_SPECIFIED = 2;
+    public static int NO_KEYED_FIELDS_SPECIFIED = 3;
+
+    public static String STORE_NOT_FOUND_ERROR_MSG = "The specified store does not exist.";
+    public static String NO_QUERY_VALUES_SPECIFIED_ERROR_MSG = "No query values specified.";
+    public static String NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG = "No (valid) keyed fields (and values) specified.";
+    
 
     public QueryRecord queryRecord;
 
