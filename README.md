@@ -152,4 +152,9 @@ Assuming a fully functional instance running on `localhost` at port `4443`, whic
 ```
 
 
-For the interested reader, a research paper that deals with three LSH families in conjunction with PPRL is [An LSH-Based Blocking Approach with a Homomorphic Matching Technique for Privacy-Preserving Record Linkage](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6880802&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6880802), published by IEEE TKDE (Volume:27, Issue: 4, 2015).
+###References
+For the interested reader, we suggest the following research papers:
+* [Similarity Search in High Dimensions via Hashing](http://www.vldb.org/conf/1999/P49.pdf), presented in VLDB (1999).
+* [A fast and efficient Hamming LSH-based scheme for accurate linkage](http://link.springer.com/article/10.1007/s10115-016-0919-y), published by KAIS (2016).
+* [Efficient Record Linkage Using a Compact Hamming Space](https://openproceedings.org/2016/conf/edbt/paper-56.pdf), presented in EDBT (2016).
+* [An LSH-Based Blocking Approach with a Homomorphic Matching Technique for Privacy-Preserving Record Linkage](http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=6880802&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D6880802), published by IEEE TKDE (Volume:27, Issue: 4, 2015).
