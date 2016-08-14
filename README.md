@@ -1,4 +1,5 @@
-# LSHDB
+https://upload.wikimedia.org/wikipedia/commons/d/d1/Sierpinski_deep.svg
+# LSHDB 
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/gr.eap.LSHDB/LSHDB/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22gr.eap.LSHDB%22)
 
