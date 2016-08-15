@@ -145,11 +145,12 @@ Assuming a fully functional instance running on `localhost` at port `4443`, whic
 			} else { 
 		                out="<table>"; 	  
 			        for(i = 0; i < json.length; i++) {
-				        out += "<tr><td>"+(i+1)+".</td><td>" +  json[i].author + "</td><td>" + json[i].title + "</td><td>" +  json[i].year +   "</td></tr>";
+				        out += "<tr><td>"+(i+1)+".</td><td>" +  json[i].author + "</td><td>" + 
+				        json[i].title + "</td><td>" +  json[i].year +   "</td></tr>";
 			         }
-                           	out += "</table>";
+                           	 out += "</table>";
 			}
-                     document.getElementById("id01").innerHTML = out;
+                        document.getElementById("id01").innerHTML = out;
         }
     });
 ```
