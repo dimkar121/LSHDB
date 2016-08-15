@@ -155,6 +155,23 @@ Assuming a fully functional instance running on `localhost` at port `4443`, whic
     });
 ```
 
+##Distributed setting
+To showcase the distributed extensions of LSHDB, assume that records of the `dblp` store have been horizontally partitioned to three compute nodes, namely `n1`, `n2`, and `n3`, where `n2` and `n3` have been registered as remote nodes to `n1`. In this distributed setting, a client may submit a query to `n1`, which forwards that query to `n2` and `n3` in parallel using a pool of threads. Upon completion of the local and remote queries, `n1` sends the results back to the client. The following snippet registers `n2` and `n3` to `n1` to materialize the distributed setting described above.
+```xml
+<remote_nodes>
+     <remote_node>
+	     <server>n2</server>
+ 	     <port>4443</port>
+	     <enabled>true</enabled>
+     </remote_node>
+     <remote_node>
+	     <server>n3</server>
+             <port>4443</port>
+	     <enabled>true</enabled>
+     </remote_node>
+</remote_nodes>
+```
+
 
 ###References
 For the interested reader, we suggest the following research papers:
