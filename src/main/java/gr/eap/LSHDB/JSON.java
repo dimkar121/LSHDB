@@ -116,14 +116,14 @@ public class JSON {
                 if (!db.getConfiguration().isKeyed) {
                     query.set(sim, true);
                 }
-
                 long tStartInd = System.nanoTime();
                  Result result=null;
-                try{
-                   result = db.query(query);
-                }catch(NoKeyedFieldsException ex){
-                     throw new JSONException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG, Result.NO_KEYED_FIELDS_SPECIFIED);
-                }   
+                //try{
+                  // result = db.query(query);
+                //}catch(NoKeyedFieldsException ex){
+                  //   throw new JSONException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG, Result.NO_KEYED_FIELDS_SPECIFIED);
+                //}   
+                result = db.prepareQuery(query);
                 result.setStatus(Result.STATUS_OK);
                 long tEndInd = System.nanoTime();
                 long elapsedTimeInd = tEndInd - tStartInd;

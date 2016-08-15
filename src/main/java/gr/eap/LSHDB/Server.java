@@ -17,10 +17,10 @@ import java.util.Properties;
  * @author dimkar
  */
 public class Server {
-    // Data Custodians
-
+    
     private ServerSocket serverSocket = null;
     private Socket socket = null;
+    private String server = null;
     private int port = 4443;
     private ObjectInputStream inStream = null;
     Configuration[] hc;
@@ -30,9 +30,6 @@ public class Server {
     public Server(String configDir) {
         Properties props = new Properties();
         FileInputStream in;
-        //String folderName="c:";
-
-       
 
         String[] folders = null;
         String[] dbNames = null;
@@ -43,15 +40,13 @@ public class Server {
         //String[] remoteNodes = null;
         String[] indexFieldNames = null;
         Config config = new Config(configDir+"config.xml");
+        server = config.get("server");
         port = Integer.parseInt(config.get("port"));
         dbNames = config.getList("name");
         folders = config.getList("folder");
         dbEngines = config.getList("engine");
         LSHStores = config.getList("LSHStore");
-        LSHConf = config.getList("LSHConfiguration");
-
-
-        
+        LSHConf = config.getList("LSHConfiguration");        
 
 
 
@@ -79,6 +74,9 @@ public class Server {
                     lsh[i].addNode(new Node(remoteNode, port, enabled));
                     System.out.println("registering remote node " + remoteNode+ " for " + dbNames[i]);
                 }
+                Node localNode = new Node(server, port, true);
+                localNode.setLocal();
+                lsh[i].addNode(localNode);
             }
             System.out.println("Supporting " + dbNames[i] + " which uses " + LSHStores[i] + " and is materialized by " + dbEngines[i]);
 
@@ -86,6 +84,11 @@ public class Server {
 
     }
 
+    
+    public String getServerName(){
+        return server;
+    }
+    
     public void communicate() {
         try {
             serverSocket = new ServerSocket(port);

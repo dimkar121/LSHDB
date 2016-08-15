@@ -5,7 +5,6 @@
  */
 package gr.eap.LSHDB;
 
-import gr.eap.LSHDB.priv.Client;
 import gr.eap.LSHDB.util.QueryRecord;
 import gr.eap.LSHDB.util.Result;
 import gr.eap.LSHDB.util.Record;
@@ -14,13 +13,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import gr.eap.LSHDB.client.Client;
 
 /**
  *
@@ -40,23 +43,23 @@ public abstract class DataStore {
     ArrayList<Node> nodes = new ArrayList<Node>();
     boolean queryRemoteNodes = false;
     boolean massInsertMode = false;
-    
-    public void setMassInsertMode(boolean status){
+
+    public void setMassInsertMode(boolean status) {
         massInsertMode = status;
     }
-    
-    public boolean getMassInsertMode(){
+
+    public boolean getMassInsertMode() {
         return massInsertMode;
     }
-    
-    public void setQueryMode(boolean status){
+
+    public void setQueryMode(boolean status) {
         queryRemoteNodes = status;
     }
-    
-    public boolean getQueryMode(){
+
+    public boolean getQueryMode() {
         return queryRemoteNodes;
     }
-    
+
     public ArrayList<Node> getNodes() {
         return this.nodes;
     }
@@ -70,9 +73,9 @@ public abstract class DataStore {
         return keyMap.get(fieldName);
     }
 
-    public void setKeyMap(String fieldName,boolean massInsertMode) throws NoSuchMethodException, ClassNotFoundException  {
+    public void setKeyMap(String fieldName, boolean massInsertMode) throws NoSuchMethodException, ClassNotFoundException {
         fieldName = fieldName.replaceAll(" ", "");
-        keyMap.put(fieldName, DataStoreFactory.build(folder, dbName, "keys_" + fieldName, dbEngine,massInsertMode));
+        keyMap.put(fieldName, DataStoreFactory.build(folder, dbName, "keys_" + fieldName, dbEngine, massInsertMode));
     }
 
     public StoreEngine getDataMap(String fieldName) {
@@ -80,40 +83,39 @@ public abstract class DataStore {
         return dataMap.get(fieldName);
     }
 
-    public void setDataMap(String fieldName, boolean massInsertMode) throws NoSuchMethodException, ClassNotFoundException{
+    public void setDataMap(String fieldName, boolean massInsertMode) throws NoSuchMethodException, ClassNotFoundException {
         fieldName = fieldName.replaceAll(" ", "");
-        dataMap.put(fieldName, DataStoreFactory.build(folder, dbName, "data_" + fieldName, dbEngine,massInsertMode));
+        dataMap.put(fieldName, DataStoreFactory.build(folder, dbName, "data_" + fieldName, dbEngine, massInsertMode));
     }
 
-    public void init(String dbEngine,boolean massInsertMode) throws StoreInitException {
-       try{ 
-        this.dbEngine = dbEngine;
-        pathToDB = folder + System.getProperty("file.separator") + dbName;
-        records = DataStoreFactory.build(folder, dbName, "records", dbEngine,massInsertMode);
-        if ((this.getConfiguration() != null) && (this.getConfiguration().isKeyed())) {
-            String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
-            for (int j = 0; j < keyFieldNames.length; j++) {
-                String keyFieldName = keyFieldNames[j];
-                setKeyMap(keyFieldName,massInsertMode);
-                setDataMap(keyFieldName,massInsertMode);
+    public void init(String dbEngine, boolean massInsertMode) throws StoreInitException {
+        try {
+            this.dbEngine = dbEngine;
+            pathToDB = folder + System.getProperty("file.separator") + dbName;
+            records = DataStoreFactory.build(folder, dbName, "records", dbEngine, massInsertMode);
+            if ((this.getConfiguration() != null) && (this.getConfiguration().isKeyed())) {
+                String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
+                for (int j = 0; j < keyFieldNames.length; j++) {
+                    String keyFieldName = keyFieldNames[j];
+                    setKeyMap(keyFieldName, massInsertMode);
+                    setDataMap(keyFieldName, massInsertMode);
+                }
+            } else {
+                keys = DataStoreFactory.build(folder, dbName, "keys", dbEngine, massInsertMode);
+                data = DataStoreFactory.build(folder, dbName, "data", dbEngine, massInsertMode);
+                keyMap.put("recordLevel", keys);
+                dataMap.put("recordLevel", data);
+
             }
-        } else {
-            keys = DataStoreFactory.build(folder, dbName, "keys", dbEngine,massInsertMode);
-            data = DataStoreFactory.build(folder, dbName, "data", dbEngine,massInsertMode);
-            keyMap.put("recordLevel", keys);
-            dataMap.put("recordLevel", data);
-
+        } catch (ClassNotFoundException ex) {
+            throw new StoreInitException("Decalred class " + dbEngine + " not found.");
+        } catch (NoSuchMethodException ex) {
+            throw new StoreInitException("The particular constructor cannot be found in the decalred class " + dbEngine + ".");
         }
-       }catch(ClassNotFoundException ex){
-            throw new StoreInitException("Decalred class "+dbEngine +" not found.");
-       } 
-       catch(NoSuchMethodException ex){
-            throw new StoreInitException("The particular constructor cannot be found in the decalred class "+dbEngine+".");
-       }
     }
 
-    public void persist(){
-        records .persist();
+    public void persist() {
+        records.persist();
         if (this.getConfiguration().isKeyed()) {
             String[] keyFieldNames = this.getConfiguration().keyFieldNames;
             for (int j = 0; j < keyFieldNames.length; j++) {
@@ -128,8 +130,7 @@ public abstract class DataStore {
             keys.persist();
         }
     }
-    
-    
+
     public void close() {
 
         records.close();
@@ -171,28 +172,53 @@ public abstract class DataStore {
         return this.dbEngine;
     }
 
-    public Result queryRemoteNodes(QueryRecord queryRecord, Result result) {
-        if (this.getNodes().size()==0)
+    public Result queryRemoteNodes(QueryRecord queryRecord, Result result) throws ExecutionException {
+        if (this.getNodes().size() == 0) {
             return result;
+        }
         // should implment get Active Nodes
         ExecutorService executorService = Executors.newFixedThreadPool(this.getNodes().size());
         List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
 
         final QueryRecord q = queryRecord;
-        
-        //RemoteQuery[] rqs = new RemoteQuery[];
         for (int i = 0; i < this.getNodes().size(); i++) {
             final Node node = this.getNodes().get(i);
-            if (node.isEnabled())
-            callables.add(new Callable<Result>() {
-                public Result call() throws Exception {
-                    System.out.println("querying remote node "+node.ip);
-                    Client client = new Client(node.ip, node.port, q.getDbName());
-                    return client.queryServer(q);
-                }
-            });
-        }
+            if (node.isEnabled()) {
+                callables.add(new Callable<Result>() {
+                    public Result call() throws ExecutionException {
+                        Result r = null;
+                        System.out.println("querying node " + node.server);
+                        if (! node.isLocal()) {  
+                            Client client = new Client(node.server, node.port);
+                            try {
+                                r = client.queryServer(q);
+                                if (r.getStatus() == Result.STORE_NOT_FOUND) {
+                                    throw new StoreInitException("The specified store " + q.getStoreName() + " was not found.");
+                                }
+                                r.setRemote();
+                            } catch (ConnectException ex) {
+                                System.out.println(Client.CONNECTION_ERROR_MSG);
+                                System.out.println("Specified server: " + node.server);
+                                System.out.println("You should either check its availability, or resolve any possible network issues.");
+                            } catch (UnknownHostException ex) {
+                                System.out.println(Client.UNKNOWNHOST_ERROR_MSG);
+                            } catch (StoreInitException ex) {
+                                System.out.println(ex.getMessage());
+                            }
 
+                        } else {
+                            try {
+                                r = query(q);
+                                r.prepare();                                
+                            } catch (NoKeyedFieldsException ex) {
+                                System.out.println(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);
+                            }
+                        }
+                        return r;
+                    }
+                });
+            }
+        }
 
         try {
             List<Future<Result>> futures = executorService.invokeAll(callables);
@@ -203,19 +229,30 @@ public abstract class DataStore {
                     if (partialResults != null) {
                         for (int j = 0; j < partialResults.getRecords().size(); j++) {
                             Record rec = partialResults.getRecords().get(j);
-                            rec.setRemote();
+                            if (partialResults.isRemote())
+                                rec.setRemote();
                             result.getRecords().add(rec);
                         }
                     }
                 }
             }
-        } catch (Exception ex) {
+        } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
         executorService.shutdown();
         return result;
     }
-    
+
+    public Result prepareQuery(QueryRecord q) {
+        Result r = null;
+        try {
+            r = queryRemoteNodes(q, new Result(q));
+        } catch (ExecutionException ex) {
+            ex.printStackTrace();
+        }
+        return r;
+    }
+
     public HashMap<String, BloomFilter[]> toBloomFilter(Record rec) {
         HashMap<String, BloomFilter[]> bfMap = new HashMap<String, BloomFilter[]>();
         boolean isKeyed = this.getConfiguration().isKeyed();
@@ -223,7 +260,7 @@ public abstract class DataStore {
         ArrayList<String> fieldNames = rec.getFieldNames();
         BloomFilter bf = new BloomFilter("", 1000, 10, 2, true);
 
-        for (int i = 0; i < fieldNames.size(); i++) {            
+        for (int i = 0; i < fieldNames.size(); i++) {
             String fieldName = fieldNames.get(i);
             boolean isNotIndexedField = rec.isNotIndexedField(fieldName);
             String s = (String) rec.get(fieldName);
@@ -236,7 +273,7 @@ public abstract class DataStore {
                         if (!isTokenized) {
                             bfMap.put(keyFieldName, new BloomFilter[]{new BloomFilter(s, key.size, 15, 2, true)});
                         } else {
-                            String[] os = (String[]) rec.get(keyFieldName + Key.TOKENS);                            
+                            String[] os = (String[]) rec.get(keyFieldName + Key.TOKENS);
                             BloomFilter[] bfs = new BloomFilter[os.length];
                             for (int k = 0; k < bfs.length; k++) {
                                 String v = os[k];
@@ -246,9 +283,8 @@ public abstract class DataStore {
                         }
                     }
                 }
-            } else {
-                if (! isNotIndexedField)
-                     bf.encode(s, true);
+            } else if (!isNotIndexedField) {
+                bf.encode(s, true);
             }
         }
         if (!isKeyed) {
@@ -257,11 +293,6 @@ public abstract class DataStore {
 
         return bfMap;
     }
-    
-    
-    
-    
-    
 
     public abstract void hash(String id, Object data, String keyFieldName);
 
@@ -270,5 +301,5 @@ public abstract class DataStore {
     public abstract void insert(Record rec);
 
     public abstract Configuration getConfiguration();
-   
+
 }

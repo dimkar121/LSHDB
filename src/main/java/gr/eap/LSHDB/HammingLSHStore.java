@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -229,8 +230,6 @@ public class HammingLSHStore extends DataStore {
                             queryBitSet(queryBs, queryRecord, keyFieldName, result);
 
                         }
-
-           
                     }
                 }
             }
@@ -246,9 +245,12 @@ public class HammingLSHStore extends DataStore {
             queryBitSet(queryBs, queryRecord, Configuration.RECORD_LEVEL, result);
         }
         
+       /* try{
          result = queryRemoteNodes(queryRecord,result);
-
-
+        }catch(ExecutionException ex){
+            System.out.println(ex.getMessage());
+        }*/  
+         
         return result;
     }
 

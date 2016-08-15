@@ -46,6 +46,15 @@ public class Result implements Serializable {
 
     ArrayList<Record> resultList = new ArrayList<Record>();
 
+    boolean remote = false;
+    public boolean isRemote(){
+        return remote;
+    }
+    
+    public void setRemote(){
+        remote=true;
+    }
+    
     
     
     
@@ -142,6 +151,7 @@ public class Result implements Serializable {
         }
     }
 
+    
     public Result(QueryRecord rec) {
         queryRecord = rec;
         ArrayList<String> fieldNames = queryRecord.getQueryFieldNames();

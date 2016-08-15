@@ -14,9 +14,11 @@ import java.util.HashMap;
  * @author dimkar
  */
 public class QueryRecord extends Record {
-
+    
+    public static final long serialVersionUID = 999L;
+    
     int maxQueryRows;
-    String dbName;
+    String storeName;
     
     boolean clientQuery = true;
     public boolean isClientQuery() {
@@ -75,9 +77,9 @@ public class QueryRecord extends Record {
         }
     }
 
-    public QueryRecord(String dbName,int maxQueryRows) {
+    public QueryRecord(String storeName,int maxQueryRows) {
         super();    
-        this.dbName = dbName;
+        this.storeName = storeName;
         this.maxQueryRows = maxQueryRows;
     }
 
@@ -90,16 +92,9 @@ public class QueryRecord extends Record {
         return maxQueryRows;
     }
 
-    public String getDbName() {
-        return dbName;
+    public String getStoreName() {
+        return storeName;
     }
 
-    /*
-     public void setKeyFieldNames(String[] keyFieldNames){
-         this.keyFieldNames = keyFieldNames;
-     }
-     
-     public String[] getKeyFieldNames(){
-         return this.keyFieldNames;
-     }*/
+   
 }

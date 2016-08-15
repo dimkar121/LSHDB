@@ -95,7 +95,7 @@ public class Server_Thread extends Thread {
             if (stream instanceof QueryRecord) {
                 try {
                     this.query = (QueryRecord) stream;
-                    String dsName = this.query.getDbName();
+                    String dsName = this.query.getStoreName();
                     DataStore db = getDB(dsName);
                     if (db == null) {
                         throw new StoreInitException(Result.STORE_NOT_FOUND_ERROR_MSG + "(" + dsName + ")");

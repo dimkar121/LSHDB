@@ -18,17 +18,25 @@ import java.net.Socket;
  */
 public class Node {
 
-    String ip;
+    String server;
     int port;
     boolean enabled = true;
+    boolean local = false;
     
     public boolean isEnabled(){
         return (enabled==true);
     }
     
+    public boolean isLocal(){
+        return local;
+    }
     
-    public Node(String ip, int port, boolean enabled) {
-        this.ip = ip;
+    public void setLocal(){
+        this.local=true;
+    }
+    
+    public Node(String server, int port, boolean enabled) {
+        this.server = server;
         this.port = port;
         this.enabled = enabled;
     }

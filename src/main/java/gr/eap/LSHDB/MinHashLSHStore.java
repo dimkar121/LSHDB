@@ -5,7 +5,6 @@
  */
 package gr.eap.LSHDB;
 
-import gr.eap.LSHDB.priv.Client;
 import gr.eap.LSHDB.util.FileUtil;
 import gr.eap.LSHDB.util.Property;
 import gr.eap.LSHDB.util.QueryRecord;
@@ -21,6 +20,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -259,13 +259,16 @@ public class MinHashLSHStore extends DataStore {
             queryBitSet(queryBs, queryRecord, Configuration.RECORD_LEVEL, result);
         }
 
-        
-        result = queryRemoteNodes(queryRecord,result);
-
+        try{
+          result = queryRemoteNodes(queryRecord,result);
+        }catch(ExecutionException ex){
+            System.out.println(ex.getMessage());
+        }
 
         return result;
     }
 
+    
     public BitSet toBitSet(String bf) {
         BitSet bs = new BitSet(bf.length());
         for (int i = 0; i < bf.length(); i++) {
