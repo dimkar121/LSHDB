@@ -165,4 +165,4 @@ For the interested reader, we suggest the following research papers:
  
 
 ![LSHDB](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Sierpinski_deep.svg/128px-Sierpinski_deep.svg.png)
-######By Sega sai (Own work) [CC BY-SA 3.0 (http://creativecommons.org/licenses/by-sa/3.0) or GFDL (http://www.gnu.org/copyleft/fdl.html)], via Wikimedia Commons **
+######Image owned by Sega sai [CC BY-SA 3.0 (http://creativecommons.org/licenses/by-sa/3.0) or GFDL (http://www.gnu.org/copyleft/fdl.html)], via Wikimedia Commons **
