@@ -24,6 +24,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import gr.eap.LSHDB.client.Client;
+import gr.eap.LSHDB.util.ListUtil;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashSet;
 
 /**
  *
@@ -247,6 +251,139 @@ public abstract class DataStore {
         }
         return r;
     }
+    
+    
+    
+    
+     public void iterateHashTables(EmbeddingStructure struct1, QueryRecord queryRec, String keyFieldName, Result result) {
+        Configuration conf = this.getConfiguration();         
+        int rowCount = queryRec.getMaxQueryRows();
+        boolean performComparisons = queryRec.performComparisons(keyFieldName);
+        double userPercentageThreshold = queryRec.getUserPercentageThreshold(keyFieldName);
+        StoreEngine keys = this.getKeyMap(keyFieldName);
+        StoreEngine data = this.getDataMap(keyFieldName);
+        Key key = conf.getKey(keyFieldName);
+        boolean isPrivateMode = conf.isPrivateMode();
+        //int t = ((HammingKey) key).t;
+        //if (userPercentageThreshold > 0.0) {
+          //  t = (int) Math.round(((HammingKey) key).t * userPercentageThreshold);
+        //}
+        int a = 0;
+        int pairs = 0;
+        for (int j = 0; j < key.L; j++) {
+           
+            if (a >= rowCount) {
+                break;
+            }
+            String hashKey = buildHashKey(j, struct1, keyFieldName);
+            if (keys.contains(hashKey)) {
+                ArrayList arr = (ArrayList) keys.get(hashKey);
+                for (int i = 0; i < arr.size(); i++) {
+                    String id = (String) arr.get(i);
+
+                    CharSequence cSeq = Key.KEYFIELD;
+                    String idRec = id;
+                    if (idRec.contains(cSeq)) {
+                        idRec = id.split(Key.KEYFIELD)[0];
+                    }
+                    Record dataRec = null;
+                    if (!conf.isPrivateMode())
+                      dataRec= (Record) records.get(idRec);   // which id and which record shoudl strip the "_keyField_" part , if any
+                    else {
+                        dataRec= new Record();
+                        dataRec.setId(idRec);
+                    }
+                        
+                    if ((performComparisons) && (!result.getMap(keyFieldName).containsKey(id))) {
+
+                     
+                        EmbeddingStructure struct2 = (EmbeddingStructure)  data.get(id); //issue: many bitSets accumulated
+                        pairs++;
+                        
+                        classify(struct1, struct2, key);
+                        
+                                
+                        int d = distance(queryBs, bs);
+                        if (d <= t) {
+                            
+                            
+                            
+                            if (result.add(keyFieldName, dataRec)) {                                
+                                a++;
+                            }
+                        }
+                        
+                        
+
+                       
+                    } else {
+                        pairs++;
+                        result.add(keyFieldName, dataRec);
+                    }
+
+                }
+            }
+        }
+   
+    }
+
+    
+    
+    
+    public Result prepareQuery(QueryRecord queryRecord) throws NoKeyedFieldsException{
+        Configuration conf = this.getConfiguration();
+        StoreEngine hashKeys = keys;
+        StoreEngine dataKeys = data;
+        HashMap<String, EmbeddingStructure[]> embMap = null; 
+        //  if (! conf.isPrivateMode())
+        //    bfMap = toBloomFilter(queryRecord);
+        boolean isKeyed = this.getConfiguration().isKeyed();
+        String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
+        //    BitSet queryBs = bf[0].getBitSet();
+        Result result = new Result(queryRecord);
+        ArrayList<String> fieldNames = queryRecord.getFieldNames();
+        
+        if ((fieldNames.isEmpty()) && (conf.isKeyed))
+               throw new NoKeyedFieldsException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);
+        if(ListUtil.intersection(fieldNames, Arrays.asList(keyFieldNames)).isEmpty()  && (conf.isKeyed)){
+               throw new NoKeyedFieldsException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);                
+        }        
+        
+        for (int i = 0; i < fieldNames.size(); i++) {
+            String fieldName = fieldNames.get(i);
+            if (keyFieldNames != null) {
+                for (int j = 0; j < keyFieldNames.length; j++) {
+                    String keyFieldName = keyFieldNames[j];
+                    if (keyFieldName.equals(fieldName)) {
+                        EmbeddingStructure[] structArr = embMap.get(fieldName);
+                        for (int k = 0; k < structArr.length; k++) {
+                             iterateHashTables(structArr[k], queryRecord, keyFieldName, result);
+
+                        }
+                    }
+                }
+            }
+
+        }
+
+        if (!isKeyed)  {
+            EmbeddingStructure emb = null;
+            if (conf.isPrivateMode())
+                emb = (EmbeddingStructure) queryRecord.get(Record.PRIVATE_STRUCTURE);
+            else 
+                emb = embMap.get(Configuration.RECORD_LEVEL)[0];
+            iterateHashTables(emb, queryRecord, Configuration.RECORD_LEVEL, result);
+        }
+        
+               
+        return result;
+    }
+
+    
+    
+    
+    
+    
 
     public HashMap<String, BloomFilter[]> toBloomFilter(Record rec) {
         HashMap<String, BloomFilter[]> bfMap = new HashMap<String, BloomFilter[]>();
@@ -291,6 +428,12 @@ public abstract class DataStore {
 
     public abstract void hash(String id, Object data, String keyFieldName);
 
+    public abstract String buildHashKey(int j, EmbeddingStructure struct,String keyFieldName);
+    
+    public abstract boolean classify(EmbeddingStructure struct1, EmbeddingStructure struct2, Key key);
+    
+    //public abstract double distance(EmbeddingStructure struct1, EmbeddingStructure struct2);
+        
     public abstract Result query(QueryRecord queryRecord) throws NoKeyedFieldsException;
 
     public abstract void insert(Record rec);

@@ -33,7 +33,7 @@ import java.util.Iterator;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-public class BloomFilter {
+public class BloomFilter extends EmbeddingStructure{
 
     private BitSet bitset;
     private int bitSetSize;

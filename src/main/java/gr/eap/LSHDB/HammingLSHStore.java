@@ -53,7 +53,8 @@ public class HammingLSHStore extends DataStore {
         return this.hConf;
     }
 
-    public String buildKey(int j, BitSet bs, String keyFieldName) {
+    public String buildHashKey(int j, BloomFilter bf, String keyFieldName) {
+        BitSet bs = bf.getBitSet();
         String hashKey = "";
         Key key = hConf.getKey(keyFieldName);
 
@@ -116,7 +117,7 @@ public class HammingLSHStore extends DataStore {
         Key key = hConf.getKey(keyFieldName);
 
         for (int j = 0; j < key.L; j++) {
-            String hashKey = buildKey(j, bs, keyFieldName);
+            String hashKey = buildHashKey(j, bs, keyFieldName);
             ArrayList<String> arr = new ArrayList<String>();
 
             if (hashKeys.contains(hashKey)) {
@@ -147,10 +148,9 @@ public class HammingLSHStore extends DataStore {
         for (int j = 0; j < key.L; j++) {
            
             if (a >= rowCount) {
-                //System.out.println("Performed totally "+pairs+" comparisons. Running on "+j);  
                 break;
             }
-            String hashKey = buildKey(j, queryBs, keyFieldName);
+            String hashKey = buildHashKey(j, queryBs, keyFieldName);
             if (keys.contains(hashKey)) {
                 ArrayList arr = (ArrayList) keys.get(hashKey);
                 for (int i = 0; i < arr.size(); i++) {
@@ -197,6 +197,9 @@ public class HammingLSHStore extends DataStore {
    
     }
 
+    
+    
+    
     @Override
     public Result query(QueryRecord queryRecord) throws NoKeyedFieldsException{
         StoreEngine hashKeys = keys;
@@ -245,12 +248,7 @@ public class HammingLSHStore extends DataStore {
             queryBitSet(queryBs, queryRecord, Configuration.RECORD_LEVEL, result);
         }
         
-       /* try{
-         result = queryRemoteNodes(queryRecord,result);
-        }catch(ExecutionException ex){
-            System.out.println(ex.getMessage());
-        }*/  
-         
+               
         return result;
     }
 
