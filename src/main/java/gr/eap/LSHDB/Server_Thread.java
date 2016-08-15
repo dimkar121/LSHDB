@@ -105,7 +105,7 @@ public class Server_Thread extends Thread {
                     result.setStatus(Result.STATUS_OK);
                     long tStartInd = System.nanoTime();
                     try {
-                        result = db.query(query);
+                        result = db.forkQuery(query);
                     } catch (NoKeyedFieldsException ex) {
                         result.setStatus(Result.NO_KEYED_FIELDS_SPECIFIED);
                     }

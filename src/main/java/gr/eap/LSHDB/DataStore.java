@@ -172,7 +172,7 @@ public abstract class DataStore {
         return this.dbEngine;
     }
 
-    public Result queryRemoteNodes(QueryRecord queryRecord, Result result) throws ExecutionException {
+    public Result queryNodes(QueryRecord queryRecord, Result result) throws ExecutionException, StoreInitException, NoKeyedFieldsException {
         if (this.getNodes().size() == 0) {
             return result;
         }
@@ -185,15 +185,16 @@ public abstract class DataStore {
             final Node node = this.getNodes().get(i);
             if (node.isEnabled()) {
                 callables.add(new Callable<Result>() {
-                    public Result call() throws ExecutionException {
+                    public Result call() throws ExecutionException, StoreInitException, NoKeyedFieldsException {
                         Result r = null;
                         System.out.println("querying node " + node.server);
-                        if (! node.isLocal()) {  
+                        if ((! node.isLocal()) && (q.isClientQuery()) ) {  
                             Client client = new Client(node.server, node.port);
                             try {
+                                q.setServerQuery();
                                 r = client.queryServer(q);
                                 if (r.getStatus() == Result.STORE_NOT_FOUND) {
-                                    throw new StoreInitException("The specified store " + q.getStoreName() + " was not found.");
+                                    throw new StoreInitException("The specified store " + q.getStoreName() + " was not found on "+node.server);
                                 }
                                 r.setRemote();
                             } catch (ConnectException ex) {
@@ -202,17 +203,11 @@ public abstract class DataStore {
                                 System.out.println("You should either check its availability, or resolve any possible network issues.");
                             } catch (UnknownHostException ex) {
                                 System.out.println(Client.UNKNOWNHOST_ERROR_MSG);
-                            } catch (StoreInitException ex) {
-                                System.out.println(ex.getMessage());
-                            }
+                            }   
 
                         } else {
-                            try {
                                 r = query(q);
                                 r.prepare();                                
-                            } catch (NoKeyedFieldsException ex) {
-                                System.out.println(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);
-                            }
                         }
                         return r;
                     }
@@ -243,10 +238,10 @@ public abstract class DataStore {
         return result;
     }
 
-    public Result prepareQuery(QueryRecord q) {
+    public Result forkQuery(QueryRecord q) throws StoreInitException, NoKeyedFieldsException {
         Result r = null;
         try {
-            r = queryRemoteNodes(q, new Result(q));
+            r = queryNodes(q, new Result(q));
         } catch (ExecutionException ex) {
             ex.printStackTrace();
         }

@@ -117,13 +117,14 @@ public class JSON {
                     query.set(sim, true);
                 }
                 long tStartInd = System.nanoTime();
-                 Result result=null;
-                //try{
-                  // result = db.query(query);
-                //}catch(NoKeyedFieldsException ex){
-                  //   throw new JSONException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG, Result.NO_KEYED_FIELDS_SPECIFIED);
-                //}   
-                result = db.prepareQuery(query);
+                Result result=null;               
+                try{
+                    result = db.forkQuery(query);
+                }catch(NoKeyedFieldsException ex){
+                     throw new JSONException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG, Result.NO_KEYED_FIELDS_SPECIFIED);
+                }catch(StoreInitException ex){
+                     throw new JSONException(Result.STORE_NOT_FOUND_ERROR_MSG, Result.STORE_NOT_FOUND );
+                }
                 result.setStatus(Result.STATUS_OK);
                 long tEndInd = System.nanoTime();
                 long elapsedTimeInd = tEndInd - tStartInd;
