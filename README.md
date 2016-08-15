@@ -56,7 +56,7 @@ HammingLSHStore lsh = new HammingLSHStore(folder, storeName, engine, hc, true);
 
 // iterate the records from a relational db or from a text file
 Record record = new Record();
-record.setId(id);  // this value should be unique
+record.setId(id);  // this value uniquely identifies an author
 record.set("author", fullName);
 record.set("author"+Key.TOKENS, new String[]{surname}); 
 record.set("title", title);
@@ -72,7 +72,7 @@ The object `record` may store any kind of fields depending on the running applic
 
 The way to submit similarity queries against a store, using keyed fields, is as follows:
 ```java
-QueryRecord query = new QueryRecord(40); // 40 denotes the max number of the returned records.
+QueryRecord query = new QueryRecord(n); // n denotes the max number of the returned records.
 query.setKeyedField("author", new String[]{"John"},1.0,true);
 Result result = lsh.query(query);
 result.prepare();  
