@@ -13,6 +13,9 @@ import org.apache.commons.math3.distribution.BinomialDistribution;
  * @author dimkar
  */
 public class HammingKey  extends Key{
+    
+    public static final long serialVersionUID = 501L;
+    
     public int t;    
     public int[][] samples;
     String[] tokens;

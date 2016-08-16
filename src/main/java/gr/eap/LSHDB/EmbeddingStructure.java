@@ -15,11 +15,13 @@
  */
 package gr.eap.LSHDB;
 
+import java.io.Serializable;
+
 /**
  *
  * @author dimkar
  */
-public abstract class EmbeddingStructure {
-      
+public abstract class EmbeddingStructure implements Serializable{
+      public static final long serialVersionUID = 6767L;
      
 }

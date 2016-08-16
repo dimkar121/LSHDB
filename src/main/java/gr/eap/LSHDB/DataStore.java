@@ -26,8 +26,8 @@ import java.util.concurrent.Future;
 import gr.eap.LSHDB.client.Client;
 import gr.eap.LSHDB.util.ListUtil;
 import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashSet;
+import java.util.Map;
+import static javafx.scene.input.KeyCode.T;
 
 /**
  *
@@ -255,7 +255,7 @@ public abstract class DataStore {
     
     
     
-     public void iterateHashTables(EmbeddingStructure struct1, QueryRecord queryRec, String keyFieldName, Result result) {
+     public void forkHashTables(EmbeddingStructure struct1, QueryRecord queryRec, String keyFieldName, Result result) {
         Configuration conf = this.getConfiguration();         
         int rowCount = queryRec.getMaxQueryRows();
         boolean performComparisons = queryRec.performComparisons(keyFieldName);
@@ -264,10 +264,6 @@ public abstract class DataStore {
         StoreEngine data = this.getDataMap(keyFieldName);
         Key key = conf.getKey(keyFieldName);
         boolean isPrivateMode = conf.isPrivateMode();
-        //int t = ((HammingKey) key).t;
-        //if (userPercentageThreshold > 0.0) {
-          //  t = (int) Math.round(((HammingKey) key).t * userPercentageThreshold);
-        //}
         int a = 0;
         int pairs = 0;
         for (int j = 0; j < key.L; j++) {
@@ -296,24 +292,14 @@ public abstract class DataStore {
                         
                     if ((performComparisons) && (!result.getMap(keyFieldName).containsKey(id))) {
 
-                     
                         EmbeddingStructure struct2 = (EmbeddingStructure)  data.get(id); //issue: many bitSets accumulated
                         pairs++;
                         
-                        classify(struct1, struct2, key);
-                        
-                                
-                        int d = distance(queryBs, bs);
-                        if (d <= t) {
-                            
-                            
-                            
-                            if (result.add(keyFieldName, dataRec)) {                                
+                        key.thresholdRatio = userPercentageThreshold;
+                        if (distance(struct1, struct2, key)){
+                                result.add(keyFieldName, dataRec);
                                 a++;
                             }
-                        }
-                        
-                        
 
                        
                     } else {
@@ -327,16 +313,76 @@ public abstract class DataStore {
    
     }
 
+     
+     
+      public void hash(String id, EmbeddingStructure emb, String keyFieldName) {
+        boolean isKeyed = this.getConfiguration().isKeyed();
+        String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
+        StoreEngine hashKeys = keys;
+        if (isKeyed) {
+            hashKeys = this.getKeyMap(keyFieldName);
+        }
+        
+        Key key = this.getConfiguration().getKey(keyFieldName);
+
+        for (int j = 0; j < key.L; j++) {
+            String hashKey = buildHashKey(j, emb, keyFieldName);
+            ArrayList<String> arr = new ArrayList<String>();
+
+            if (hashKeys.contains(hashKey)) {
+                arr = (ArrayList) hashKeys.get(hashKey);
+                arr.add(id);
+
+            } else {
+                arr.add(id);
+            }
+            hashKeys.set(hashKey, arr);
+        }
+    }
+
+      
+      
+     public void insert(Record rec) {
+        if (this.getConfiguration().isPrivateMode()) {
+            EmbeddingStructure emb = (EmbeddingStructure) rec.get(Record.PRIVATE_STRUCTURE);
+            data.set(rec.getId(), emb);
+            hash(rec.getId(), emb, Configuration.RECORD_LEVEL);
+            return;
+        }
+
+        boolean isKeyed = this.getConfiguration().isKeyed();
+        String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
+        HashMap<String,? extends EmbeddingStructure[]> embMap = createKeyFieldEmbeddingStructureMap(rec);
+
+        if (isKeyed) {
+            for (int i = 0; i < keyFieldNames.length; i++) {
+                String keyFieldName = keyFieldNames[i];
+                EmbeddingStructure[] embs = embMap.get(keyFieldName);
+                for (int j = 0; j < embs.length; j++) {
+                    EmbeddingStructure emb = embs[j];
+                    hash(rec.getId() + Key.KEYFIELD + j, emb, keyFieldName);
+                    this.getDataMap(keyFieldName).set(rec.getId() + Key.KEYFIELD + j, emb);
+                }
+
+            }
+        } else {
+            data.set(rec.getId(), ((EmbeddingStructure[]) embMap.get(Configuration.RECORD_LEVEL))[0]);
+            hash(rec.getId(),((EmbeddingStructure[]) embMap.get(Configuration.RECORD_LEVEL))[0], Configuration.RECORD_LEVEL);
+        }
+
+        records.set(rec.getId(), rec);
+    }
+     
     
     
     
-    public Result prepareQuery(QueryRecord queryRecord) throws NoKeyedFieldsException{
+    public Result query(QueryRecord queryRecord) throws NoKeyedFieldsException{
         Configuration conf = this.getConfiguration();
         StoreEngine hashKeys = keys;
         StoreEngine dataKeys = data;
-        HashMap<String, EmbeddingStructure[]> embMap = null; 
-        //  if (! conf.isPrivateMode())
-        //    bfMap = toBloomFilter(queryRecord);
+        HashMap<String,? extends EmbeddingStructure[]> embMap = null; 
+         if (! conf.isPrivateMode())
+            embMap = createKeyFieldEmbeddingStructureMap(queryRecord);
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
         //    BitSet queryBs = bf[0].getBitSet();
@@ -357,7 +403,7 @@ public abstract class DataStore {
                     if (keyFieldName.equals(fieldName)) {
                         EmbeddingStructure[] structArr = embMap.get(fieldName);
                         for (int k = 0; k < structArr.length; k++) {
-                             iterateHashTables(structArr[k], queryRecord, keyFieldName, result);
+                             forkHashTables(structArr[k], queryRecord, keyFieldName, result);
 
                         }
                     }
@@ -371,8 +417,8 @@ public abstract class DataStore {
             if (conf.isPrivateMode())
                 emb = (EmbeddingStructure) queryRecord.get(Record.PRIVATE_STRUCTURE);
             else 
-                emb = embMap.get(Configuration.RECORD_LEVEL)[0];
-            iterateHashTables(emb, queryRecord, Configuration.RECORD_LEVEL, result);
+                emb = ((EmbeddingStructure[]) embMap.get(Configuration.RECORD_LEVEL))[0];
+            forkHashTables(emb, queryRecord, Configuration.RECORD_LEVEL, result);
         }
         
                
@@ -426,17 +472,16 @@ public abstract class DataStore {
         return bfMap;
     }
 
-    public abstract void hash(String id, Object data, String keyFieldName);
+    //public abstract void hash(String id, Object data, String keyFieldName);
 
     public abstract String buildHashKey(int j, EmbeddingStructure struct,String keyFieldName);
     
-    public abstract boolean classify(EmbeddingStructure struct1, EmbeddingStructure struct2, Key key);
-    
-    //public abstract double distance(EmbeddingStructure struct1, EmbeddingStructure struct2);
+    public abstract boolean distance(EmbeddingStructure struct1, EmbeddingStructure struct2, Key key);
         
-    public abstract Result query(QueryRecord queryRecord) throws NoKeyedFieldsException;
-
-    public abstract void insert(Record rec);
+    //public abstract Result query(QueryRecord queryRecord) throws NoKeyedFieldsException;
+    public abstract HashMap <String, ? extends EmbeddingStructure[] > createKeyFieldEmbeddingStructureMap(Record rec);
+    
+   // public abstract void insert(Record rec);
 
     public abstract Configuration getConfiguration();
 

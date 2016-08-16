@@ -12,6 +12,9 @@ import java.util.Random;
  * @author dimkar
  */
 public class MinHashKey extends Key{
+    
+    public static final long serialVersionUID = 502L;
+    
     public double t;    
     public int permutationsNo = 0;
     public int[][][] permutations;

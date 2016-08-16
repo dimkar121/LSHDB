@@ -22,29 +22,26 @@ package gr.eap.LSHDB;
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+import java.io.Serializable;
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.BitSet;
 import java.util.ArrayList;
-import java.math.BigInteger;
-import java.text.DecimalFormat;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-public class BloomFilter extends EmbeddingStructure{
-
+public class BloomFilter extends EmbeddingStructure implements Serializable{
+  
+    public static final long serialVersionUID = 67671L;
+    
     private BitSet bitset;
     private int bitSetSize;
     private int bitsSet = 0;
     private int numberOfAddedElements;  // number of elements actually added to the Bloom filter
     private int k; // number of hash functions
     private int grams;
-    private int[] cols;
-    private int expectedNumberOfFilterElements = 0;
-    private double bitsPerElement = 0.0;
-    private double fp=.0;
+    private int[] cols;    
     static final Charset charset = Charset.forName("UTF-8"); // encoding used for storing hash values as strings
 
     public BloomFilter(String s, int length, int k, int grams, boolean padded) {
@@ -67,38 +64,7 @@ public class BloomFilter extends EmbeddingStructure{
         encode(s, true);
     }
 
-  
-    public BloomFilter(double c, int n, int k, double falsePositiveProbability) {
-        this.expectedNumberOfFilterElements = n;
-        this.k = k;
-        this.bitsPerElement = c;
-        this.bitSetSize = 1200; //(int) Math.ceil(c * n);
-        this.fp = falsePositiveProbability;   
-        int rho = (int) Math.ceil(- expectedNumberOfFilterElements * Math.log(fp) / Math.pow(Math.log(2),2) );
-        numberOfAddedElements = 0;
-        this.bitset = new BitSet(bitSetSize);
-    }
-
-    
-   
-    public BloomFilter(String s, double falsePositiveProbability, int expectedNumberOfElements, int grams) {             
-        this(Math.ceil(-(Math.log(falsePositiveProbability) / Math.log(2))) / Math.log(2), // c = k / ln(2)
-                expectedNumberOfElements,
-                (int) Math.ceil(-(Math.log(falsePositiveProbability) / Math.log(2))), falsePositiveProbability ); // k = ceil(-log_2(false prob.))
-        this.grams = grams;
-        this.cols = new int[bitSetSize];
-        encode(s, true);
-    }
-
-    public double getProbability0() {
-        //If we have inserted n elements, the probability that a certain bit is still 0 is
-        return Math.pow((1 - 1.0 / this.bitSetSize), this.k * this.numberOfAddedElements);
-    }
-
-    public double getProbability1() {
-        //the probability that it is 1 is therefore    
-        return 1 - getProbability0();
-    }
+      
 
     public void addElement(String s) {
         //word=binascii.a2b_qp(qgram) # convert to binary
@@ -250,10 +216,7 @@ public class BloomFilter extends EmbeddingStructure{
         return this.numberOfAddedElements;
     }
 
-    public int sumOfElements() {
-        return this.bitsSet;
-    }
-
+   
     public void encode(String s, boolean padded) {
         if (padded) {
             s = "_" + s + "_";

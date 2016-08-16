@@ -24,36 +24,54 @@ public class HammingLSHStore extends DataStore {
 
     HammingConfiguration hConf;
 
-    public HammingLSHStore(String folder, String dbName, String dbEngine, Configuration hc,boolean massInsertMode) throws StoreInitException  {
+    public HammingLSHStore(String folder, String dbName, String dbEngine, Configuration hc, boolean massInsertMode) throws StoreInitException {
         this.folder = folder;
         this.dbName = dbName;
         this.massInsertMode = massInsertMode;
         if (hc == null) {
-            hConf = new HammingConfiguration(folder, dbName, dbEngine,massInsertMode  );
+            hConf = new HammingConfiguration(folder, dbName, dbEngine, massInsertMode);
         } else {
             hConf = (HammingConfiguration) hc;
         }
-        init(dbEngine,massInsertMode);
+        init(dbEngine, massInsertMode);
 
     }
-    
+
     public HammingLSHStore(String folder, String dbName, String dbEngine) throws StoreInitException {
         this.folder = folder;
         this.dbName = dbName;
-        hConf = new HammingConfiguration(folder, dbName, dbEngine,massInsertMode);        
-        init(dbEngine,massInsertMode);
+        hConf = new HammingConfiguration(folder, dbName, dbEngine, massInsertMode);
+        init(dbEngine, massInsertMode);
         hConf.saveConfiguration();
     }
-    
-    
-    
-    
 
     public Configuration getConfiguration() {
         return this.hConf;
     }
 
-    public String buildHashKey(int j, BloomFilter bf, String keyFieldName) {
+    
+    @Override
+    public HashMap<String, BloomFilter[]> createKeyFieldEmbeddingStructureMap(Record rec){
+            return toBloomFilter(rec);
+    }
+    
+    
+    public boolean distance(EmbeddingStructure struct1, EmbeddingStructure struct2, Key key) {
+        BloomFilter bf1 = (BloomFilter) struct1;
+        BloomFilter bf2 = (BloomFilter) struct2;
+        int t = ((HammingKey) key).t;
+        if (key.thresholdRatio > 0.0) {
+            t = (int) Math.round(t * key.thresholdRatio);
+        }
+        BitSet bs1 = bf1.getBitSet();
+        BitSet bs2 = bf2.getBitSet();
+        int d = distance(bs1, bs2);
+        return (d <= t);            
+    }
+
+    @Override
+    public String buildHashKey(int j, EmbeddingStructure emb, String keyFieldName) {
+        BloomFilter bf = (BloomFilter) emb;
         BitSet bs = bf.getBitSet();
         String hashKey = "";
         Key key = hConf.getKey(keyFieldName);
@@ -70,16 +88,14 @@ public class HammingLSHStore extends DataStore {
         return "L" + j + "_" + hashKey;
     }
 
-    
-
-    public void insert(Record rec) {
-        if (hConf.isPrivateMode()){
+     /* public void insert(Record rec) {
+        if (hConf.isPrivateMode()) {
             BitSet bs = (BitSet) rec.get(Record.PRIVATE_STRUCTURE);
-            data.set(rec.getId(), bs);      
+            data.set(rec.getId(), bs);
             hash(rec.getId(), bs, Configuration.RECORD_LEVEL);
             return;
-        } 
-         
+        }
+
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
         HashMap<String, BloomFilter[]> bfMap = toBloomFilter(rec);
@@ -105,7 +121,7 @@ public class HammingLSHStore extends DataStore {
         records.set(rec.getId(), rec);
     }
 
-    public void hash(String id, Object dataPoint, String keyFieldName) {
+   public void hash(String id, Object dataPoint, String keyFieldName) {
 
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
@@ -131,127 +147,126 @@ public class HammingLSHStore extends DataStore {
         }
     }
 
-    public void queryBitSet(BitSet queryBs, QueryRecord queryRec, String keyFieldName, Result result) {
-        int rowCount = queryRec.getMaxQueryRows();
-        boolean performComparisons = queryRec.performComparisons(keyFieldName);
-        double userPercentageThreshold = queryRec.getUserPercentageThreshold(keyFieldName);
-        StoreEngine keys = this.getKeyMap(keyFieldName);
-        StoreEngine data = this.getDataMap(keyFieldName);
-        Key key = hConf.getKey(keyFieldName);
-        boolean isPrivateMode = hConf.isPrivateMode();
-        int t = ((HammingKey) key).t;
-        if (userPercentageThreshold > 0.0) {
-            t = (int) Math.round(((HammingKey) key).t * userPercentageThreshold);
-        }
-        int a = 0;
-        int pairs = 0;
-        for (int j = 0; j < key.L; j++) {
+     public void queryBitSet(BitSet queryBs, QueryRecord queryRec, String keyFieldName, Result result) {
+     int rowCount = queryRec.getMaxQueryRows();
+     boolean performComparisons = queryRec.performComparisons(keyFieldName);
+     double userPercentageThreshold = queryRec.getUserPercentageThreshold(keyFieldName);
+     StoreEngine keys = this.getKeyMap(keyFieldName);
+     StoreEngine data = this.getDataMap(keyFieldName);
+     Key key = hConf.getKey(keyFieldName);
+     boolean isPrivateMode = hConf.isPrivateMode();
+     int t = ((HammingKey) key).t;
+     if (userPercentageThreshold > 0.0) {
+     t = (int) Math.round(((HammingKey) key).t * userPercentageThreshold);
+     }
+     int a = 0;
+     int pairs = 0;
+     for (int j = 0; j < key.L; j++) {
            
-            if (a >= rowCount) {
-                break;
-            }
-            String hashKey = buildHashKey(j, queryBs, keyFieldName);
-            if (keys.contains(hashKey)) {
-                ArrayList arr = (ArrayList) keys.get(hashKey);
-                for (int i = 0; i < arr.size(); i++) {
-                    String id = (String) arr.get(i);
+     if (a >= rowCount) {
+     break;
+     }
+     String hashKey = buildHashKey(j, queryBs, keyFieldName);
+     if (keys.contains(hashKey)) {
+     ArrayList arr = (ArrayList) keys.get(hashKey);
+     for (int i = 0; i < arr.size(); i++) {
+     String id = (String) arr.get(i);
 
-                    CharSequence cSeq = Key.KEYFIELD;
-                    String idRec = id;
-                    if (idRec.contains(cSeq)) {
-                        idRec = id.split(Key.KEYFIELD)[0];
-                    }
-                    Record dataRec = null;
-                    if (!hConf.isPrivateMode())
-                      dataRec= (Record) records.get(idRec);   // which id and which record shoudl strip the "_keyField_" part , if any
-                    else {
-                        dataRec= new Record();
-                        dataRec.setId(idRec);
-                    }
+     CharSequence cSeq = Key.KEYFIELD;
+     String idRec = id;
+     if (idRec.contains(cSeq)) {
+     idRec = id.split(Key.KEYFIELD)[0];
+     }
+     Record dataRec = null;
+     if (!hConf.isPrivateMode())
+     dataRec= (Record) records.get(idRec);   // which id and which record shoudl strip the "_keyField_" part , if any
+     else {
+     dataRec= new Record();
+     dataRec.setId(idRec);
+     }
                         
-                    if ((performComparisons) && (!result.getMap(keyFieldName).containsKey(id))) {
+     if ((performComparisons) && (!result.getMap(keyFieldName).containsKey(id))) {
 
-                        BitSet bs = (BitSet) data.get(id); //issue: many bitSets accumulated
+     BitSet bs = (BitSet) data.get(id); //issue: many bitSets accumulated
 
                        
-                        pairs++;
-                        int d = distance(queryBs, bs);
+     pairs++;
+     int d = distance(queryBs, bs);
                        
                         
-                        if (d <= t) {
-                            if (result.add(keyFieldName, dataRec)) {                                
-                                a++;
-                            }
+     if (d <= t) {
+     if (result.add(keyFieldName, dataRec)) {                                
+     a++;
+     }
 
-                        }
+     }
 
                        
-                    } else {
-                        pairs++;
-                        result.add(keyFieldName, dataRec);
-                    }
+     } else {
+     pairs++;
+     result.add(keyFieldName, dataRec);
+     }
 
-                }
-            }
-        }
+     }
+     }
+     }
    
-    }
+     }
 
     
     
     
-    @Override
-    public Result query(QueryRecord queryRecord) throws NoKeyedFieldsException{
-        StoreEngine hashKeys = keys;
-        StoreEngine dataKeys = data;
-        HashMap<String, BloomFilter[]> bfMap = null; 
-        if (! hConf.isPrivateMode())
-           bfMap = toBloomFilter(queryRecord);
-        boolean isKeyed = this.getConfiguration().isKeyed();
-        String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
-        //    BitSet queryBs = bf[0].getBitSet();
-        Result result = new Result(queryRecord);
-        HashSet set = new HashSet<Record>();
-        ArrayList<Record> finalRecordList = new ArrayList<Record>();
-        ArrayList<String> fieldNames = queryRecord.getFieldNames();
+     @Override
+     public Result query(QueryRecord queryRecord) throws NoKeyedFieldsException{
+     StoreEngine hashKeys = keys;
+     StoreEngine dataKeys = data;
+     HashMap<String, BloomFilter[]> bfMap = null; 
+     if (! hConf.isPrivateMode())
+     bfMap = toBloomFilter(queryRecord);
+     boolean isKeyed = this.getConfiguration().isKeyed();
+     String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
+     //    BitSet queryBs = bf[0].getBitSet();
+     Result result = new Result(queryRecord);
+     HashSet set = new HashSet<Record>();
+     ArrayList<Record> finalRecordList = new ArrayList<Record>();
+     ArrayList<String> fieldNames = queryRecord.getFieldNames();
         
-        if ((fieldNames.size()==0) && (hConf.isKeyed))
-               throw new NoKeyedFieldsException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);
-        if(ListUtil.intersection(fieldNames, Arrays.asList(keyFieldNames)).size()==0  && (hConf.isKeyed)){
-               throw new NoKeyedFieldsException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);                
-        }        
+     if ((fieldNames.size()==0) && (hConf.isKeyed))
+     throw new NoKeyedFieldsException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);
+     if(ListUtil.intersection(fieldNames, Arrays.asList(keyFieldNames)).size()==0  && (hConf.isKeyed)){
+     throw new NoKeyedFieldsException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);                
+     }        
         
-        for (int i = 0; i < fieldNames.size(); i++) {
-            String fieldName = fieldNames.get(i);
-            if (keyFieldNames != null) {
-                for (int j = 0; j < keyFieldNames.length; j++) {
-                    String keyFieldName = keyFieldNames[j];
-                    if (keyFieldName.equals(fieldName)) {
-                        BloomFilter[] bfs = bfMap.get(fieldName);
-                        for (int k = 0; k < bfs.length; k++) {
-                            BitSet queryBs = bfs[k].getBitSet();
-                            queryBitSet(queryBs, queryRecord, keyFieldName, result);
+     for (int i = 0; i < fieldNames.size(); i++) {
+     String fieldName = fieldNames.get(i);
+     if (keyFieldNames != null) {
+     for (int j = 0; j < keyFieldNames.length; j++) {
+     String keyFieldName = keyFieldNames[j];
+     if (keyFieldName.equals(fieldName)) {
+     BloomFilter[] bfs = bfMap.get(fieldName);
+     for (int k = 0; k < bfs.length; k++) {
+     BitSet queryBs = bfs[k].getBitSet();
+     queryBitSet(queryBs, queryRecord, keyFieldName, result);
 
-                        }
-                    }
-                }
-            }
+     }
+     }
+     }
+     }
 
-        }
+     }
 
-        if (!isKeyed)  {
-            BitSet queryBs = null;
-            if (hConf.isPrivateMode())
-                queryBs =(BitSet) queryRecord.get(Record.PRIVATE_STRUCTURE);
-            else 
-                queryBs = bfMap.get(Configuration.RECORD_LEVEL)[0].getBitSet();
-            queryBitSet(queryBs, queryRecord, Configuration.RECORD_LEVEL, result);
-        }
+     if (!isKeyed)  {
+     BitSet queryBs = null;
+     if (hConf.isPrivateMode())
+     queryBs =(BitSet) queryRecord.get(Record.PRIVATE_STRUCTURE);
+     else 
+     queryBs = bfMap.get(Configuration.RECORD_LEVEL)[0].getBitSet();
+     queryBitSet(queryBs, queryRecord, Configuration.RECORD_LEVEL, result);
+     }
         
                
-        return result;
-    }
-
+     return result;
+     }*/
     public BitSet toBitSet(String bf) {
         BitSet bs = new BitSet(bf.length());
         for (int i = 0; i < bf.length(); i++) {
@@ -275,11 +290,9 @@ public class HammingLSHStore extends DataStore {
 
         return results;
     }
-    
-    
-    public void save(){
-        
+
+    public void save() {
+
     }
 
-    
 }

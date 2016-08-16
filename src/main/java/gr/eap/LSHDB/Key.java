@@ -26,6 +26,7 @@ public abstract class Key implements Serializable{
     public static String KEYFIELD = "_keyField_";
     public static String TOKENS = "_tokens";
     
+    public double thresholdRatio;
     
     public abstract void optimizeL();
     
