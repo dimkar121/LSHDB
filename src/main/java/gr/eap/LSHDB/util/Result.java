@@ -36,7 +36,9 @@ public class Result implements Serializable {
     public QueryRecord queryRecord;
 
     int status = 0;
+    
 
+    
     transient HashMap<String, RecordList> recordListMap = new HashMap<String, RecordList>();
 
     String msg = "";

@@ -27,7 +27,6 @@ import gr.eap.LSHDB.client.Client;
 import gr.eap.LSHDB.util.ListUtil;
 import java.util.Arrays;
 import java.util.Map;
-import static javafx.scene.input.KeyCode.T;
 
 /**
  *
@@ -47,7 +46,9 @@ public abstract class DataStore {
     ArrayList<Node> nodes = new ArrayList<Node>();
     boolean queryRemoteNodes = false;
     boolean massInsertMode = false;
-
+    
+    
+    
     public void setMassInsertMode(boolean status) {
         massInsertMode = status;
     }
@@ -192,13 +193,13 @@ public abstract class DataStore {
                     public Result call() throws ExecutionException, StoreInitException, NoKeyedFieldsException {
                         Result r = null;
                         System.out.println("querying node " + node.server);
-                        if ((! node.isLocal()) && (q.isClientQuery()) ) {  
+                        if ((!node.isLocal()) && (q.isClientQuery())) {
                             Client client = new Client(node.server, node.port);
                             try {
                                 q.setServerQuery();
                                 r = client.queryServer(q);
                                 if (r.getStatus() == Result.STORE_NOT_FOUND) {
-                                    throw new StoreInitException("The specified store " + q.getStoreName() + " was not found on "+node.server);
+                                    throw new StoreInitException("The specified store " + q.getStoreName() + " was not found on " + node.server);
                                 }
                                 r.setRemote();
                             } catch (ConnectException ex) {
@@ -207,11 +208,11 @@ public abstract class DataStore {
                                 System.out.println("You should either check its availability, or resolve any possible network issues.");
                             } catch (UnknownHostException ex) {
                                 System.out.println(Client.UNKNOWNHOST_ERROR_MSG);
-                            }   
+                            }
 
                         } else {
-                                r = query(q);
-                                r.prepare();                                
+                            r = query(q);
+                            r.prepare();
                         }
                         return r;
                     }
@@ -228,8 +229,9 @@ public abstract class DataStore {
                     if (partialResults != null) {
                         for (int j = 0; j < partialResults.getRecords().size(); j++) {
                             Record rec = partialResults.getRecords().get(j);
-                            if (partialResults.isRemote())
+                            if (partialResults.isRemote()) {
                                 rec.setRemote();
+                            }
                             result.getRecords().add(rec);
                         }
                     }
@@ -251,26 +253,97 @@ public abstract class DataStore {
         }
         return r;
     }
-    
-    
-    
-    
-     public void forkHashTables(EmbeddingStructure struct1, QueryRecord queryRec, String keyFieldName, Result result) {
-        Configuration conf = this.getConfiguration();         
-        int rowCount = queryRec.getMaxQueryRows();
-        boolean performComparisons = queryRec.performComparisons(keyFieldName);
-        double userPercentageThreshold = queryRec.getUserPercentageThreshold(keyFieldName);
-        StoreEngine keys = this.getKeyMap(keyFieldName);
-        StoreEngine data = this.getDataMap(keyFieldName);
-        Key key = conf.getKey(keyFieldName);
+
+    public void forkHashTables(EmbeddingStructure struct1, QueryRecord queryRec, String keyFieldName, Result result) throws ExecutionException {
+        final Configuration conf = this.getConfiguration();
+        final int maxQueryRows = queryRec.getMaxQueryRows();
+        final boolean performComparisons = queryRec.performComparisons(keyFieldName);
+        final double userPercentageThreshold = queryRec.getUserPercentageThreshold(keyFieldName);
+        final StoreEngine keys = this.getKeyMap(keyFieldName);
+        final StoreEngine data = this.getDataMap(keyFieldName);
+        final Key key = conf.getKey(keyFieldName);
         boolean isPrivateMode = conf.isPrivateMode();
-        int a = 0;
-        int pairs = 0;
+        
+        
+        
+        ExecutorService executorService = Executors.newFixedThreadPool(key.L);
+        List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
+
+        final Result result1 = result;
+        final String keyFieldName1 = keyFieldName;
+        final EmbeddingStructure struct11 = struct1;
+        
         for (int j = 0; j < key.L; j++) {
-           
-            if (a >= rowCount) {
-                break;
+            final int hashTableNo = j;
+            callables.add(new Callable<Result>() {
+                public Result call() throws ExecutionException, StoreInitException, NoKeyedFieldsException, InterruptedException {
+                    String hashKey = buildHashKey(hashTableNo, struct11, keyFieldName1);
+                    if (keys.contains(hashKey)) {
+                        ArrayList arr = (ArrayList) keys.get(hashKey);
+                        for (int i = 0; i < arr.size(); i++) {
+                            String id = (String) arr.get(i);
+
+                            CharSequence cSeq = Key.KEYFIELD;
+                            String idRec = id;
+                            if (idRec.contains(cSeq)) {
+                                idRec = id.split(Key.KEYFIELD)[0];
+                            }
+                            Record dataRec = null;
+                            if (!conf.isPrivateMode()) {
+                                dataRec = (Record) records.get(idRec);   // which id and which record shoudl strip the "_keyField_" part , if any
+                            } else {
+                                dataRec = new Record();
+                                dataRec.setId(idRec);
+                            }
+
+                            if ((performComparisons) && (!result1.getMap(keyFieldName1).containsKey(id))) {                               
+                                EmbeddingStructure struct2 = (EmbeddingStructure) data.get(id); 
+                                key.thresholdRatio = userPercentageThreshold;
+                                if (distance(struct11, struct2, key)) {
+                                    result1.add(keyFieldName1, dataRec);
+                                    int matchesNo = result1.getDataRecordsSize(keyFieldName1);
+                                    if (matchesNo >= maxQueryRows){
+                                        throw new InterruptedException("maximum number of query rows have been reached. " +maxQueryRows+" "+matchesNo);
+                                    }
+                                }
+
+                            } else {
+                                result1.add(keyFieldName1, dataRec);
+                            }
+
+                        }
+                    }
+                  return result1;
+                }
+            });
+        }
+
+        try {
+            List<Future<Result>> futures = executorService.invokeAll(callables);
+
+            for (Future<Result> future : futures) {
+                if (future != null) {
+                    Result partialResults = future.get();
+                    if (partialResults != null) {
+                        for (int j = 0; j < partialResults.getRecords().size(); j++) {
+                            Record rec = partialResults.getRecords().get(j);                           
+                            result.getRecords().add(rec);
+                            //result.getRecords().addAll(partialResults.getRecords());
+                        }
+                    }
+                }
             }
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+        executorService.shutdown();
+
+        
+       
+       /* for (int j = 0; j < key.L; j++) {
+
+           
+
             String hashKey = buildHashKey(j, struct1, keyFieldName);
             if (keys.contains(hashKey)) {
                 ArrayList arr = (ArrayList) keys.get(hashKey);
@@ -283,46 +356,46 @@ public abstract class DataStore {
                         idRec = id.split(Key.KEYFIELD)[0];
                     }
                     Record dataRec = null;
-                    if (!conf.isPrivateMode())
-                      dataRec= (Record) records.get(idRec);   // which id and which record shoudl strip the "_keyField_" part , if any
-                    else {
-                        dataRec= new Record();
+                    if (!conf.isPrivateMode()) {
+                        dataRec = (Record) records.get(idRec);   // which id and which record shoudl strip the "_keyField_" part , if any
+                    } else {
+                        dataRec = new Record();
                         dataRec.setId(idRec);
                     }
-                        
+
                     if ((performComparisons) && (!result.getMap(keyFieldName).containsKey(id))) {
 
-                        EmbeddingStructure struct2 = (EmbeddingStructure)  data.get(id); //issue: many bitSets accumulated
-                        pairs++;
+                        EmbeddingStructure struct2 = (EmbeddingStructure) data.get(id); //issue: many bitSets accumulated
                         
-                        key.thresholdRatio = userPercentageThreshold;
-                        if (distance(struct1, struct2, key)){
-                                result.add(keyFieldName, dataRec);
-                                a++;
-                            }
 
-                       
+                        key.thresholdRatio = userPercentageThreshold;
+                        if (distance(struct1, struct2, key)) {
+                            result.add(keyFieldName, dataRec);
+                            int matchesNo = result.getDataRecordsSize(keyFieldName);
+                            if (matchesNo >= maxQueryRows){
+                                    break;
+                            }
+                        }
+
                     } else {
-                        pairs++;
+                       
                         result.add(keyFieldName, dataRec);
                     }
 
                 }
             }
-        }
-   
+        } */
+
     }
 
-     
-     
-      public void hash(String id, EmbeddingStructure emb, String keyFieldName) {
+    public void hash(String id, EmbeddingStructure emb, String keyFieldName) {
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
         StoreEngine hashKeys = keys;
         if (isKeyed) {
             hashKeys = this.getKeyMap(keyFieldName);
         }
-        
+
         Key key = this.getConfiguration().getKey(keyFieldName);
 
         for (int j = 0; j < key.L; j++) {
@@ -340,9 +413,7 @@ public abstract class DataStore {
         }
     }
 
-      
-      
-     public void insert(Record rec) {
+    public void insert(Record rec) {
         if (this.getConfiguration().isPrivateMode()) {
             EmbeddingStructure emb = (EmbeddingStructure) rec.get(Record.PRIVATE_STRUCTURE);
             data.set(rec.getId(), emb);
@@ -352,7 +423,7 @@ public abstract class DataStore {
 
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
-        HashMap<String,? extends EmbeddingStructure[]> embMap = createKeyFieldEmbeddingStructureMap(rec);
+        HashMap<String, ? extends EmbeddingStructure[]> embMap = createKeyFieldEmbeddingStructureMap(rec);
 
         if (isKeyed) {
             for (int i = 0; i < keyFieldNames.length; i++) {
@@ -367,34 +438,34 @@ public abstract class DataStore {
             }
         } else {
             data.set(rec.getId(), ((EmbeddingStructure[]) embMap.get(Configuration.RECORD_LEVEL))[0]);
-            hash(rec.getId(),((EmbeddingStructure[]) embMap.get(Configuration.RECORD_LEVEL))[0], Configuration.RECORD_LEVEL);
+            hash(rec.getId(), ((EmbeddingStructure[]) embMap.get(Configuration.RECORD_LEVEL))[0], Configuration.RECORD_LEVEL);
         }
 
         records.set(rec.getId(), rec);
     }
-     
     
-    
-    
-    public Result query(QueryRecord queryRecord) throws NoKeyedFieldsException{
+
+    public Result query(QueryRecord queryRecord) throws NoKeyedFieldsException {
+       Result result = new Result(queryRecord); 
+       try{ 
         Configuration conf = this.getConfiguration();
         StoreEngine hashKeys = keys;
         StoreEngine dataKeys = data;
-        HashMap<String,? extends EmbeddingStructure[]> embMap = null; 
-         if (! conf.isPrivateMode())
+        HashMap<String, ? extends EmbeddingStructure[]> embMap = null;
+        if (!conf.isPrivateMode()) {
             embMap = createKeyFieldEmbeddingStructureMap(queryRecord);
+        }
         boolean isKeyed = this.getConfiguration().isKeyed();
-        String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
-        //    BitSet queryBs = bf[0].getBitSet();
-        Result result = new Result(queryRecord);
+        String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();        
         ArrayList<String> fieldNames = queryRecord.getFieldNames();
-        
-        if ((fieldNames.isEmpty()) && (conf.isKeyed))
-               throw new NoKeyedFieldsException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);
-        if(ListUtil.intersection(fieldNames, Arrays.asList(keyFieldNames)).isEmpty()  && (conf.isKeyed)){
-               throw new NoKeyedFieldsException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);                
-        }        
-        
+
+        if ((fieldNames.isEmpty()) && (conf.isKeyed)) {
+            throw new NoKeyedFieldsException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);
+        }
+        if (ListUtil.intersection(fieldNames, Arrays.asList(keyFieldNames)).isEmpty() && (conf.isKeyed)) {
+            throw new NoKeyedFieldsException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);
+        }
+
         for (int i = 0; i < fieldNames.size(); i++) {
             String fieldName = fieldNames.get(i);
             if (keyFieldNames != null) {
@@ -403,7 +474,7 @@ public abstract class DataStore {
                     if (keyFieldName.equals(fieldName)) {
                         EmbeddingStructure[] structArr = embMap.get(fieldName);
                         for (int k = 0; k < structArr.length; k++) {
-                             forkHashTables(structArr[k], queryRecord, keyFieldName, result);
+                            forkHashTables(structArr[k], queryRecord, keyFieldName, result);
 
                         }
                     }
@@ -412,25 +483,23 @@ public abstract class DataStore {
 
         }
 
-        if (!isKeyed)  {
+        if (!isKeyed) {
             EmbeddingStructure emb = null;
-            if (conf.isPrivateMode())
+            if (conf.isPrivateMode()) {
                 emb = (EmbeddingStructure) queryRecord.get(Record.PRIVATE_STRUCTURE);
-            else 
+            } else {
                 emb = ((EmbeddingStructure[]) embMap.get(Configuration.RECORD_LEVEL))[0];
+            }
             forkHashTables(emb, queryRecord, Configuration.RECORD_LEVEL, result);
         }
-        
-               
-        return result;
+       }catch(ExecutionException ex){
+           System.out.println(ex.getMessage());
+       }
+       return result;
     }
 
     
     
-    
-    
-    
-
     public HashMap<String, BloomFilter[]> toBloomFilter(Record rec) {
         HashMap<String, BloomFilter[]> bfMap = new HashMap<String, BloomFilter[]>();
         boolean isKeyed = this.getConfiguration().isKeyed();
@@ -472,16 +541,11 @@ public abstract class DataStore {
         return bfMap;
     }
 
-    //public abstract void hash(String id, Object data, String keyFieldName);
+    public abstract String buildHashKey(int j, EmbeddingStructure struct, String keyFieldName);
 
-    public abstract String buildHashKey(int j, EmbeddingStructure struct,String keyFieldName);
-    
     public abstract boolean distance(EmbeddingStructure struct1, EmbeddingStructure struct2, Key key);
-        
-    //public abstract Result query(QueryRecord queryRecord) throws NoKeyedFieldsException;
-    public abstract HashMap <String, ? extends EmbeddingStructure[] > createKeyFieldEmbeddingStructureMap(Record rec);
-    
-   // public abstract void insert(Record rec);
+
+    public abstract HashMap<String, ? extends EmbeddingStructure[]> createKeyFieldEmbeddingStructureMap(Record rec);
 
     public abstract Configuration getConfiguration();
 
