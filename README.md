@@ -100,10 +100,9 @@ we narrow the reults, which get closer to the query value ("John"):
 ##Running LSHDB as a server isntance
 In case one needs to run LSHDB as a server instance, then, should provide the following minimum configuration:
 ```xml
-<server>
-    <port>
-      4443
-    </port>
+<LSHDB>
+    <server>localhost</server>
+    <port>4443</port>
     <stores>
         <store>
             <name>dblp</name>  
@@ -113,7 +112,7 @@ In case one needs to run LSHDB as a server instance, then, should provide the fo
             <LSHConfiguration>gr.eap.LSHDB.HammingConfiguration</LSHConfiguration>	   	   
         </store>
      </stores> 
-</server>
+</LSHDB>
 ```
 Save the above snippet as `config.xml` into some folder and then run 
 
