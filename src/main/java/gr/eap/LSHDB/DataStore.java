@@ -26,7 +26,7 @@ import java.util.concurrent.Future;
 import gr.eap.LSHDB.client.Client;
 import gr.eap.LSHDB.util.ListUtil;
 import java.util.Arrays;
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
@@ -191,20 +191,20 @@ public abstract class DataStore {
             if (node.isEnabled()) {
                 callables.add(new Callable<Result>() {
                     public Result call() throws ExecutionException, StoreInitException, NoKeyedFieldsException {
-                        Result r = null;
-                        System.out.println("querying node " + node.server);
+                        Result r = null;                        
                         if ((!node.isLocal()) && (q.isClientQuery())) {
-                            Client client = new Client(node.server, node.port);
+                            System.out.println("querying remote node " + node.alias);
+                            Client client = new Client(node.url, node.port);
                             try {
                                 q.setServerQuery();
                                 r = client.queryServer(q);
                                 if (r.getStatus() == Result.STORE_NOT_FOUND) {
-                                    throw new StoreInitException("The specified store " + q.getStoreName() + " was not found on " + node.server);
+                                    throw new StoreInitException("The specified store " + q.getStoreName() + " was not found on " + node.alias);
                                 }
                                 r.setRemote();
                             } catch (ConnectException ex) {
                                 System.out.println(Client.CONNECTION_ERROR_MSG);
-                                System.out.println("Specified server: " + node.server);
+                                System.out.println("Specified server: " + node.alias+ " at " +node.url );
                                 System.out.println("You should either check its availability, or resolve any possible network issues.");
                             } catch (UnknownHostException ex) {
                                 System.out.println(Client.UNKNOWNHOST_ERROR_MSG);
@@ -273,6 +273,10 @@ public abstract class DataStore {
         final String keyFieldName1 = keyFieldName;
         final EmbeddingStructure struct11 = struct1;
         
+        final AtomicInteger counterComp = new AtomicInteger(0);
+        final AtomicInteger counterNotMatches = new AtomicInteger(0);
+        
+        
         for (int j = 0; j < key.L; j++) {
             final int hashTableNo = j;
             callables.add(new Callable<Result>() {
@@ -295,7 +299,7 @@ public abstract class DataStore {
                                 dataRec = new Record();
                                 dataRec.setId(idRec);
                             }
-
+                            counterComp.set(counterComp.incrementAndGet());
                             if ((performComparisons) && (!result1.getMap(keyFieldName1).containsKey(id))) {                               
                                 EmbeddingStructure struct2 = (EmbeddingStructure) data.get(id); 
                                 key.thresholdRatio = userPercentageThreshold;
@@ -303,8 +307,10 @@ public abstract class DataStore {
                                     result1.add(keyFieldName1, dataRec);
                                     int matchesNo = result1.getDataRecordsSize(keyFieldName1);
                                     if (matchesNo >= maxQueryRows){
-                                        throw new InterruptedException("maximum number of query rows have been reached. " +maxQueryRows+" "+matchesNo);
+                                        throw new InterruptedException("Maximum number of query rows have been reached " +maxQueryRows+" "+matchesNo);
                                     }
+                                } else{
+                                   counterNotMatches.set(counterNotMatches.incrementAndGet());                                    
                                 }
 
                             } else {
@@ -318,6 +324,10 @@ public abstract class DataStore {
             });
         }
 
+        
+        System.out.println("all comparisons="+counterComp.get());
+        System.out.println("all false comparisons="+counterNotMatches.get());
+        
         try {
             List<Future<Result>> futures = executorService.invokeAll(callables);
 
@@ -388,7 +398,7 @@ public abstract class DataStore {
 
     }
 
-    public void hash(String id, EmbeddingStructure emb, String keyFieldName) {
+    public void setHashKeys(String id, EmbeddingStructure emb, String keyFieldName) {
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
         StoreEngine hashKeys = keys;
@@ -417,7 +427,7 @@ public abstract class DataStore {
         if (this.getConfiguration().isPrivateMode()) {
             EmbeddingStructure emb = (EmbeddingStructure) rec.get(Record.PRIVATE_STRUCTURE);
             data.set(rec.getId(), emb);
-            hash(rec.getId(), emb, Configuration.RECORD_LEVEL);
+            setHashKeys(rec.getId(), emb, Configuration.RECORD_LEVEL);
             return;
         }
 
@@ -431,14 +441,14 @@ public abstract class DataStore {
                 EmbeddingStructure[] embs = embMap.get(keyFieldName);
                 for (int j = 0; j < embs.length; j++) {
                     EmbeddingStructure emb = embs[j];
-                    hash(rec.getId() + Key.KEYFIELD + j, emb, keyFieldName);
+                    setHashKeys(rec.getId() + Key.KEYFIELD + j, emb, keyFieldName);
                     this.getDataMap(keyFieldName).set(rec.getId() + Key.KEYFIELD + j, emb);
                 }
 
             }
         } else {
             data.set(rec.getId(), ((EmbeddingStructure[]) embMap.get(Configuration.RECORD_LEVEL))[0]);
-            hash(rec.getId(), ((EmbeddingStructure[]) embMap.get(Configuration.RECORD_LEVEL))[0], Configuration.RECORD_LEVEL);
+            setHashKeys(rec.getId(), ((EmbeddingStructure[]) embMap.get(Configuration.RECORD_LEVEL))[0], Configuration.RECORD_LEVEL);
         }
 
         records.set(rec.getId(), rec);

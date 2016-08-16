@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
 
@@ -23,6 +24,7 @@ public class Config {
 
     public Config(String fileName) {
         File file = new File(fileName);
+        
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try {
             DocumentBuilder db = dbf.newDocumentBuilder();
@@ -51,30 +53,21 @@ public class Config {
         return c;
     }
 
-    public String[] get(int i, String pre1, String pre2, String key) {
+    public String[] get(int i, String... tags) {
         //String[] v = new String[getCount(i,pre1,pre2)];
         ArrayList<String> v = new ArrayList<String>();
-        Node node = document.getElementsByTagName(pre1).item(i);
-        if (node != null) {
-            NodeList nodes = node.getChildNodes();   //remote_nodes of a certain dtore
-
-            for (int j = 0; j < nodes.getLength(); j++) {
-                Node node1 = nodes.item(j);
-                for (int k = 0; k < node1.getChildNodes().getLength(); k++) {
-                    Node node2 = node1.getChildNodes().item(k);
-                    String s = node2.getNodeName().trim();
-                    if (s.equals(key)) {
-                        v.add(node2.getTextContent().trim());
-                    }
-                }
-            }
+        Node doc = document.getElementsByTagName(tags[0]).item(i); //store
+        Element el = (Element) doc;            
+        NodeList nodes = el.getElementsByTagName(tags[1]);
+        String[] a = new String[nodes.getLength()];        
+        for (int k=0;k<nodes.getLength();k++){
+            Node node = nodes.item(k);
+            a[k] = node.getTextContent();
+            //System.out.println(node.getNodeValue()+" "+node.getTextContent()+" "+node.getNodeName());
         }
-        String[] a = new String[v.size()];
-        return v.toArray(a);
+        return a;
     }
 
-    
-    
     /*
      * get desc under the node
      * 

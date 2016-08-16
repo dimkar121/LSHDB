@@ -18,7 +18,8 @@ import java.net.Socket;
  */
 public class Node {
 
-    String server;
+    String alias;
+    String url;
     int port;
     boolean enabled = true;
     boolean local = false;
@@ -35,8 +36,9 @@ public class Node {
         this.local=true;
     }
     
-    public Node(String server, int port, boolean enabled) {
-        this.server = server;
+    public Node(String alias,String url, int port, boolean enabled) {
+        this.alias = alias;
+        this.url = url;
         this.port = port;
         this.enabled = enabled;
     }
