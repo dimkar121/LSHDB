@@ -46,7 +46,7 @@ public abstract class DataStore {
     ArrayList<Node> nodes = new ArrayList<Node>();
     boolean queryRemoteNodes = false;
     boolean massInsertMode = false;
-    
+   
     
     
     public void setMassInsertMode(boolean status) {
@@ -191,28 +191,34 @@ public abstract class DataStore {
             if (node.isEnabled()) {
                 callables.add(new Callable<Result>() {
                     public Result call() throws ExecutionException, StoreInitException, NoKeyedFieldsException {
-                        Result r = null;                        
+                        Result r = null;                            
                         if ((!node.isLocal()) && (q.isClientQuery())) {
-                            System.out.println("querying remote node " + node.alias);
                             Client client = new Client(node.url, node.port);
                             try {
-                                q.setServerQuery();
+                                QueryRecord newQuery =(QueryRecord) q.clone();
+                                newQuery.setServerQuery();
                                 r = client.queryServer(q);
                                 if (r.getStatus() == Result.STORE_NOT_FOUND) {
                                     throw new StoreInitException("The specified store " + q.getStoreName() + " was not found on " + node.alias);
                                 }
                                 r.setRemote();
+                                r.setRemoteServer(node.alias);
                             } catch (ConnectException ex) {
                                 System.out.println(Client.CONNECTION_ERROR_MSG);
                                 System.out.println("Specified server: " + node.alias+ " at " +node.url );
                                 System.out.println("You should either check its availability, or resolve any possible network issues.");
                             } catch (UnknownHostException ex) {
                                 System.out.println(Client.UNKNOWNHOST_ERROR_MSG);
+                             } catch (Exception ex) {
+                                     ex.printStackTrace();
                             }
 
-                        } else {
-                            r = query(q);
-                            r.prepare();
+                        } else {                            
+                            if (node.isLocal()){
+                                r = query(q);
+                                r.prepare();
+                                r.setRemoteServer(node.alias);
+                            }    
                         }
                         return r;
                     }
@@ -223,9 +229,11 @@ public abstract class DataStore {
         try {
             List<Future<Result>> futures = executorService.invokeAll(callables);
 
+            int k=0;
             for (Future<Result> future : futures) {
                 if (future != null) {
                     Result partialResults = future.get();
+                    k++;
                     if (partialResults != null) {
                         for (int j = 0; j < partialResults.getRecords().size(); j++) {
                             Record rec = partialResults.getRecords().get(j);
@@ -273,8 +281,6 @@ public abstract class DataStore {
         final String keyFieldName1 = keyFieldName;
         final EmbeddingStructure struct11 = struct1;
         
-        final AtomicInteger counterComp = new AtomicInteger(0);
-        final AtomicInteger counterNotMatches = new AtomicInteger(0);
         
         
         for (int j = 0; j < key.L; j++) {
@@ -299,19 +305,22 @@ public abstract class DataStore {
                                 dataRec = new Record();
                                 dataRec.setId(idRec);
                             }
-                            counterComp.set(counterComp.incrementAndGet());
+                            result1.pairsNo++;
+                            if (! result1.mm.containsKey(idRec))
                             if ((performComparisons) && (!result1.getMap(keyFieldName1).containsKey(id))) {                               
                                 EmbeddingStructure struct2 = (EmbeddingStructure) data.get(id); 
                                 key.thresholdRatio = userPercentageThreshold;
+                                result1.mm.put(idRec,1);                            
+                                result1.distanceNo++;
                                 if (distance(struct11, struct2, key)) {
                                     result1.add(keyFieldName1, dataRec);
                                     int matchesNo = result1.getDataRecordsSize(keyFieldName1);
                                     if (matchesNo >= maxQueryRows){
                                         throw new InterruptedException("Maximum number of query rows have been reached " +maxQueryRows+" "+matchesNo);
                                     }
-                                } else{
-                                   counterNotMatches.set(counterNotMatches.incrementAndGet());                                    
-                                }
+                                } else {
+                                    result1.noMatchesNo++;
+                                } 
 
                             } else {
                                 result1.add(keyFieldName1, dataRec);
@@ -325,15 +334,18 @@ public abstract class DataStore {
         }
 
         
-        System.out.println("all comparisons="+counterComp.get());
-        System.out.println("all false comparisons="+counterNotMatches.get());
+        
         
         try {
             List<Future<Result>> futures = executorService.invokeAll(callables);
-
+            int k=0;
             for (Future<Result> future : futures) {
+                
                 if (future != null) {
-                    Result partialResults = future.get();
+                    Result partialResults = future.get();                   
+                    if (k==0)
+                      System.out.println("pairsNo="+partialResults.pairsNo+" noMatchesNo="+partialResults.noMatchesNo+" noDistyance="+partialResults.distanceNo+" redundant pairs="+partialResults.mm.size());
+                    k++;
                     if (partialResults != null) {
                         for (int j = 0; j < partialResults.getRecords().size(); j++) {
                             Record rec = partialResults.getRecords().get(j);                           
@@ -348,56 +360,12 @@ public abstract class DataStore {
         }
         executorService.shutdown();
 
-        
        
-       /* for (int j = 0; j < key.L; j++) {
-
-           
-
-            String hashKey = buildHashKey(j, struct1, keyFieldName);
-            if (keys.contains(hashKey)) {
-                ArrayList arr = (ArrayList) keys.get(hashKey);
-                for (int i = 0; i < arr.size(); i++) {
-                    String id = (String) arr.get(i);
-
-                    CharSequence cSeq = Key.KEYFIELD;
-                    String idRec = id;
-                    if (idRec.contains(cSeq)) {
-                        idRec = id.split(Key.KEYFIELD)[0];
-                    }
-                    Record dataRec = null;
-                    if (!conf.isPrivateMode()) {
-                        dataRec = (Record) records.get(idRec);   // which id and which record shoudl strip the "_keyField_" part , if any
-                    } else {
-                        dataRec = new Record();
-                        dataRec.setId(idRec);
-                    }
-
-                    if ((performComparisons) && (!result.getMap(keyFieldName).containsKey(id))) {
-
-                        EmbeddingStructure struct2 = (EmbeddingStructure) data.get(id); //issue: many bitSets accumulated
-                        
-
-                        key.thresholdRatio = userPercentageThreshold;
-                        if (distance(struct1, struct2, key)) {
-                            result.add(keyFieldName, dataRec);
-                            int matchesNo = result.getDataRecordsSize(keyFieldName);
-                            if (matchesNo >= maxQueryRows){
-                                    break;
-                            }
-                        }
-
-                    } else {
-                       
-                        result.add(keyFieldName, dataRec);
-                    }
-
-                }
-            }
-        } */
 
     }
 
+    
+    
     public void setHashKeys(String id, EmbeddingStructure emb, String keyFieldName) {
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();

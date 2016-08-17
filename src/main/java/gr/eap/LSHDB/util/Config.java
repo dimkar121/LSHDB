@@ -24,7 +24,7 @@ public class Config {
 
     public Config(String fileName) {
         File file = new File(fileName);
-        
+
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try {
             DocumentBuilder db = dbf.newDocumentBuilder();
@@ -57,13 +57,16 @@ public class Config {
         //String[] v = new String[getCount(i,pre1,pre2)];
         ArrayList<String> v = new ArrayList<String>();
         Node doc = document.getElementsByTagName(tags[0]).item(i); //store
-        Element el = (Element) doc;            
-        NodeList nodes = el.getElementsByTagName(tags[1]);
-        String[] a = new String[nodes.getLength()];        
-        for (int k=0;k<nodes.getLength();k++){
-            Node node = nodes.item(k);
-            a[k] = node.getTextContent();
-            //System.out.println(node.getNodeValue()+" "+node.getTextContent()+" "+node.getNodeName());
+        Element el = (Element) doc;
+        String[] a = null;
+        if (el != null) {
+            NodeList nodes = el.getElementsByTagName(tags[1]);
+            a = new String[nodes.getLength()];
+            for (int k = 0; k < nodes.getLength(); k++) {
+                Node node = nodes.item(k);
+                a[k] = node.getTextContent();
+                //System.out.println(node.getNodeValue()+" "+node.getTextContent()+" "+node.getNodeName());
+            }
         }
         return a;
     }

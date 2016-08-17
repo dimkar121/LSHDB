@@ -13,7 +13,7 @@ import java.util.HashMap;
  *
  * @author dimkar
  */
-public class QueryRecord extends Record {
+public class QueryRecord extends Record implements Cloneable{
     
     public static final long serialVersionUID = 999L;
     
@@ -96,5 +96,10 @@ public class QueryRecord extends Record {
         return storeName;
     }
 
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
+    
+    
    
 }

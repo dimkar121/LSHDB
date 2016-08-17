@@ -36,6 +36,10 @@ public class Result implements Serializable {
     public QueryRecord queryRecord;
 
     int status = 0;
+    public int pairsNo=0;
+    public int noMatchesNo=0;
+    public int distanceNo=0;
+    public HashMap<String,Integer> mm=new HashMap<String,Integer>();
     
 
     
@@ -57,6 +61,13 @@ public class Result implements Serializable {
         remote=true;
     }
     
+    String remoteServer;
+    public void setRemoteServer(String server){
+        remoteServer = server;
+    }
+    public String getRemoteServer(){
+        return remoteServer;
+    }
     
     
     
