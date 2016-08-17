@@ -6,8 +6,8 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/gr.eap.LSHDB/LSHDB/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22gr.eap.LSHDB%22)
 
 
-LSHDB is a persistent data engine, which relies on the [locality-sensitive hashing](https://en.wikipedia.org/wiki/Locality-sensitive_hashing) (LSH) technique and noSQL data stores, 
-for performing [record linkage](https://en.wikipedia.org/wiki/Record_linkage) (including [privacy-preserving record linkage](https://www.cs.cmu.edu/~rjhall/linkage_survey_final.pdf) - PPRL) and similarity search tasks.
+LSHDB is a persistent and distributed data engine, which relies on the [locality-sensitive hashing](https://en.wikipedia.org/wiki/Locality-sensitive_hashing) (LSH) technique and noSQL data stores, 
+for performing [record linkage](https://en.wikipedia.org/wiki/Record_linkage) (including [privacy-preserving record linkage](https://www.cs.cmu.edu/~rjhall/linkage_survey_final.pdf) - PPRL) and similarity search tasks. Parallelism lies at the core of its mechanism, since queries are executed using a pool of threads.
 
 ##The main features of LSHDB are:
 * __Easy extensibility__  Support for any noSQL data store, or any LSH technique can be easily plugged by extending or implementing the respective abstract classes or interfaces.
@@ -101,17 +101,17 @@ we narrow the reults, which get closer to the query value ("John"):
 In case one needs to run LSHDB as a server instance, then, should provide the following minimum configuration:
 ```xml
 <LSHDB>
-    <server>localhost</server>
-    <port>4443</port>
-    <stores>
-        <store>
-            <name>dblp</name>  
-            <folder>/home/LSHDB/stores</folder>
-            <engine>gr.eap.LSHDB.MapDB</engine>
-            <LSHStore>gr.eap.LSHDB.HammingLSHStore</LSHStore>
-            <LSHConfiguration>gr.eap.LSHDB.HammingConfiguration</LSHConfiguration>	   	   
-        </store>
-     </stores> 
+   <alias>local</alias>
+   <port>4443</port>
+   <stores>
+     <store>
+       <name>dblp</name>  
+       <folder>c:\MAPDB</folder>
+       <engine>gr.eap.LSHDB.MapDB</engine>
+       <LSHStore>gr.eap.LSHDB.HammingLSHStore</LSHStore>
+       <LSHConfiguration>gr.eap.LSHDB.HammingConfiguration</LSHConfiguration>    
+     </store>
+   </stores>    
 </LSHDB>
 ```
 Save the above snippet as `config.xml` into some folder and then run 
@@ -155,20 +155,33 @@ Assuming a fully functional instance running on `localhost` at port `4443`, whic
 ```
 
 ##Distributed settings
-To showcase the distributed extensions of LSHDB, assume that records of the `dblp` store have been horizontally partitioned to three compute nodes, namely `n1`, `n2`, and `n3`, where `n2` and `n3` have been registered as remote nodes to `n1`. Subsequently, a client may submit a query to `n1`, which forwards that query to `n2` and `n3` in parallel using a pool of threads. Upon completion of the local and remote queries, `n1` sends the results back to the client. The following snippet registers `n2` and `n3` to `n1` to materialize the distributed setting described above.
+To showcase the distributed extensions of LSHDB, assume that records of the `dblp` store have been horizontally partitioned to three compute nodes, namely `n1`, `n2`, and `n3`, where `n2` and `n3` have been registered as remote nodes to `n1`. Subsequently, a client may submit a query to `n1`, which forwards that query to `n2` and `n3` in parallel using a pool of threads. Upon completion of the local and remote queries, `n1` sends the results back to the client. The following snippet registers `n2` and `n3` to `n1`.
 ```xml
 <remote_nodes>
-     <remote_node>
-	     <server>n2</server>
- 	     <port>4443</port>
-	     <enabled>true</enabled>
-     </remote_node>
-     <remote_node>
-	     <server>n3</server>
-             <port>4443</port>
-	     <enabled>true</enabled>
-     </remote_node>
-</remote_nodes>
+      <remote_node>
+	    <alias>n2</alias>
+            <port>4443</port>
+	    <url>some ip or fqdn</url>
+	   <enabled>true</enabled>
+      </remote_node>
+      <remote_node>
+	    <alias>n3</alias>
+	    <url>some ip or fqdn</url> 
+            <port>4443</port>
+	    <enabled>true</enabled>
+       </remote_node>
+</remote_nodes>	   
+```
+We also add the above-tagged aliases to the tag that describes the correponding stores.
+```xml
+<remote_stores> 
+       <remote_store>
+ 	     <alias>n2</alias>
+	</remote_store>
+	<remote_store>
+	     <alias>okeanos</alias>
+	 </remote_store
+</remote_stores>
 ```
 
 
