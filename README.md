@@ -106,7 +106,7 @@ In case one needs to run LSHDB as a server instance, then, should provide the fo
    <stores>
      <store>
        <name>dblp</name>  
-       <folder>c:\MAPDB</folder>
+       <folder>/home/LSHDB/stores</folder>
        <engine>gr.eap.LSHDB.MapDB</engine>
        <LSHStore>gr.eap.LSHDB.HammingLSHStore</LSHStore>
        <LSHConfiguration>gr.eap.LSHDB.HammingConfiguration</LSHConfiguration>    
@@ -179,8 +179,8 @@ We also add the above-tagged aliases to the tag that describes the correponding 
  	     <alias>n2</alias>
 	</remote_store>
 	<remote_store>
-	     <alias>okeanos</alias>
-	 </remote_store
+	     <alias>n3</alias>
+	 </remote_store>
 </remote_stores>
 ```
 
