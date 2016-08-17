@@ -70,7 +70,7 @@ The object `record` may store any kind of fields depending on the running applic
 
 ##Querying a store
 
-The way to submit similarity queries against a store, using keyed fields, is as follows:
+The following snippet submits a similarity query against the `dblp` store, using keyed fields.
 ```java
 QueryRecord query = new QueryRecord(n); // n denotes the max number of the returned records.
 query.setKeyedField("author", new String[]{"John"},1.0,true);
@@ -114,7 +114,7 @@ In case one needs to run LSHDB as a server instance, then, should provide the fo
    </stores>    
 </LSHDB>
 ```
-Save the above snippet as `config.xml` into some folder and then run 
+Save the above snippet as `config.xml` into some folder and then run:
 
 `mvn exec:java  -Dexec.mainClass="gr.eap.LSHDB.Server" -Dexec.args="/someFolder/"`,
 
@@ -145,7 +145,7 @@ Assuming a fully functional instance running on `localhost` at port `4443`, whic
 		                out="<table>"; 	  
 			        for(i = 0; i < json.length; i++) {
 				        out += "<tr><td>"+(i+1)+".</td><td>" +  json[i].author + "</td><td>" + 
-				        json[i].title + "</td><td>" +  json[i].year +   "</td></tr>";
+				        json[i].title + "</td><td>" +  json[i].year + "</td></tr>";
 			         }
                            	 out += "</table>";
 			}
@@ -159,20 +159,20 @@ To showcase the distributed extensions of LSHDB, assume that records of the `dbl
 ```xml
 <remote_nodes>
       <remote_node>
-	    <alias>n2</alias>
-            <port>4443</port>
-	    <url>some ip or fqdn</url>
+	   <alias>n2</alias>
+           <port>4443</port>
+	   <url>some ip or fqdn</url>
 	   <enabled>true</enabled>
       </remote_node>
       <remote_node>
-	    <alias>n3</alias>
-	    <url>some ip or fqdn</url> 
-            <port>4443</port>
-	    <enabled>true</enabled>
+	   <alias>n3</alias>
+	   <url>some ip or fqdn</url>
+           <port>4443</port>
+	   <enabled>true</enabled>
        </remote_node>
-</remote_nodes>	   
+</remote_nodes>
 ```
-We also add the above-tagged aliases to the tag that describes the correponding stores.
+We also have to denote which of these server aliases support our specified stores. This is achieved by adding the following snippet to the correponding `store` tags.
 ```xml
 <remote_stores> 
        <remote_store>
