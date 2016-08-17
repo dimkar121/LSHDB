@@ -158,18 +158,18 @@ Assuming a fully functional instance running on `localhost` at port `4443`, whic
 To showcase the distributed extensions of LSHDB, assume that records of the `dblp` store have been horizontally partitioned to three compute nodes, namely `n1`, `n2`, and `n3`, where `n2` and `n3` have been registered as remote nodes to `n1`. Subsequently, a client may submit a query to `n1`, which forwards that query to `n2` and `n3` in parallel using a pool of threads. Upon completion of the local and remote queries, `n1` sends the results back to the client. The following snippet registers `n2` and `n3` to `n1`.
 ```xml
 <remote_nodes>
-      <remote_node>
-	   <alias>n2</alias>
-           <port>4443</port>
-	   <url>some ip or fqdn</url>
-	   <enabled>true</enabled>
-      </remote_node>
-      <remote_node>
-	   <alias>n3</alias>
-	   <url>some ip or fqdn</url>
-           <port>4443</port>
-	   <enabled>true</enabled>
-       </remote_node>
+      	<remote_node>
+		<alias>n2</alias>
+		<port>4443</port>
+	   	<url>some ip or fqdn</url>
+	   	<enabled>true</enabled>
+      	</remote_node>
+      	<remote_node>
+		<alias>n3</alias>
+	   	<url>some ip or fqdn</url>
+           	<port>4443</port>
+	   	<enabled>true</enabled>
+       	</remote_node>
 </remote_nodes>
 ```
 We also have to denote which of these server aliases support our specified stores. This is achieved by adding the following snippet to the correponding `store` tags.
