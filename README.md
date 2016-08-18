@@ -6,7 +6,7 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/gr.eap.LSHDB/LSHDB/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22gr.eap.LSHDB%22)
 
 
-LSHDB is a persistent and distributed data engine, which relies on the [locality-sensitive hashing](https://en.wikipedia.org/wiki/Locality-sensitive_hashing) (LSH) technique and noSQL data stores, 
+LSHDB is a parallel and distributed data engine, which relies on the [locality-sensitive hashing](https://en.wikipedia.org/wiki/Locality-sensitive_hashing) (LSH) technique and noSQL systems, 
 for performing [record linkage](https://en.wikipedia.org/wiki/Record_linkage) (including [privacy-preserving record linkage](https://www.cs.cmu.edu/~rjhall/linkage_survey_final.pdf) - PPRL) and similarity search tasks. Parallelism lies at the core of its mechanism, since queries are executed in parallel using a pool of threads.
 
 ##The main features of LSHDB are:
@@ -14,7 +14,7 @@ for performing [record linkage](https://en.wikipedia.org/wiki/Record_linkage) (i
 * __Support of both the online query-driven mode and the offline batch process of record linkage__  LSHDB works in two modes; the first mode allows the resolution of the submitted queries in real time, while the second mode works in the traditional offline mode, which reports the results after the record linkage task has been completed.
 * __Suport of the PPRL mode__  In the case of PPRL, each participating party, termed also as a data custodian, may send its records, which have been previously masked, to a Trusted Third Party (TTP). The TTP configures and uses LSHDB for performing the linkage task and eventually sending the results back to the respective data custodians.
 * __Ease of use__  Queries can be submitted against a data store using just four lines of code.
-* _Similarity sliding__  The developer can specify the desired level of similarity between the query and the returned values by using the similarity sliding feature. 
+* __Similarity sliding__  The user can specify the desired level of similarity between the query and the returned values by using the similarity sliding feature. 
 * __Polymorphism of the response__  The result set can be returned either in terms of Java objects, or in `JSON` format for interoperability purposes.
 * __Support of distributed queries__  A query can be forwarded to multiple instances of LSHDB to support data stores that have been horizontally partitioned into multiple compute nodes.
 * __Support of storing structured and semi-structured data__  A data store may contain homogeneous or heterogeneous data.
