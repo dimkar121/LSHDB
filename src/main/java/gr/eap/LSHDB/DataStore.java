@@ -229,19 +229,20 @@ public abstract class DataStore {
         try {
             List<Future<Result>> futures = executorService.invokeAll(callables);
 
-            int k=0;
             for (Future<Result> future : futures) {
                 if (future != null) {
                     Result partialResults = future.get();
-                    k++;
                     if (partialResults != null) {
-                        for (int j = 0; j < partialResults.getRecords().size(); j++) {
-                            Record rec = partialResults.getRecords().get(j);
-                            if (partialResults.isRemote()) {
-                                rec.setRemote();
-                            }
-                            result.getRecords().add(rec);
-                        }
+                        
+                         result.getRecords().addAll(partialResults.getRecords());                                                
+                        
+                        //for (int j = 0; j < partialResults.getRecords().size(); j++) {
+                          //  Record rec = partialResults.getRecords().get(j);
+                           // if (partialResults.isRemote()) {
+                             //   rec.setRemote();
+                            //}
+                            //result.getRecords().add(rec);
+                        //}
                     }
                 }
             }
@@ -270,18 +271,14 @@ public abstract class DataStore {
         final StoreEngine keys = this.getKeyMap(keyFieldName);
         final StoreEngine data = this.getDataMap(keyFieldName);
         final Key key = conf.getKey(keyFieldName);
-        boolean isPrivateMode = conf.isPrivateMode();
-        
-        
+        boolean isPrivateMode = conf.isPrivateMode();             
         
         ExecutorService executorService = Executors.newFixedThreadPool(key.L);
         List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
 
         final Result result1 = result;
         final String keyFieldName1 = keyFieldName;
-        final EmbeddingStructure struct11 = struct1;
-        
-        
+        final EmbeddingStructure struct11 = struct1;               
         
         for (int j = 0; j < key.L; j++) {
             final int hashTableNo = j;
@@ -305,21 +302,17 @@ public abstract class DataStore {
                                 dataRec = new Record();
                                 dataRec.setId(idRec);
                             }
-                            result1.pairsNo++;
-                            if (! result1.mm.containsKey(idRec))
+                            result1.incPairsNo();
                             if ((performComparisons) && (!result1.getMap(keyFieldName1).containsKey(id))) {                               
                                 EmbeddingStructure struct2 = (EmbeddingStructure) data.get(id); 
                                 key.thresholdRatio = userPercentageThreshold;
-                                result1.mm.put(idRec,1);                            
-                                result1.distanceNo++;
                                 if (distance(struct11, struct2, key)) {
                                     result1.add(keyFieldName1, dataRec);
                                     int matchesNo = result1.getDataRecordsSize(keyFieldName1);
                                     if (matchesNo >= maxQueryRows){
-                                        throw new InterruptedException("Maximum number of query rows have been reached " +maxQueryRows+" "+matchesNo);
+                                        throw new InterruptedException("Maximum number of query rows have been reached (" +maxQueryRows+").");
                                     }
                                 } else {
-                                    result1.noMatchesNo++;
                                 } 
 
                             } else {
@@ -344,14 +337,10 @@ public abstract class DataStore {
                 if (future != null) {
                     Result partialResults = future.get();                   
                     if (k==0)
-                      System.out.println("pairsNo="+partialResults.pairsNo+" noMatchesNo="+partialResults.noMatchesNo+" noDistyance="+partialResults.distanceNo+" redundant pairs="+partialResults.mm.size());
+                      System.out.println("pairsNo="+partialResults.getPairsNo());
                     k++;
                     if (partialResults != null) {
-                        for (int j = 0; j < partialResults.getRecords().size(); j++) {
-                            Record rec = partialResults.getRecords().get(j);                           
-                            result.getRecords().add(rec);
-                            //result.getRecords().addAll(partialResults.getRecords());
-                        }
+                        result.getRecords().addAll(partialResults.getRecords());                                                
                     }
                 }
             }

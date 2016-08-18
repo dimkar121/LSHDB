@@ -5,24 +5,22 @@
  */
 package gr.eap.LSHDB.util;
 
-import gr.eap.LSHDB.DataStore;
 import gr.eap.LSHDB.Key;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
  * @author dimkar
  */
 public class Result implements Serializable {
-    
-    public static final long serialVersionUID = 555L; 
-    
+
+    public static final long serialVersionUID = 555L;
+
     public static int STATUS_OK = 0;
     public static int STORE_NOT_FOUND = 1;
     public static int NO_QUERY_VALUES_SPECIFIED = 2;
@@ -31,18 +29,11 @@ public class Result implements Serializable {
     public static String STORE_NOT_FOUND_ERROR_MSG = "The specified store does not exist.";
     public static String NO_QUERY_VALUES_SPECIFIED_ERROR_MSG = "No query values specified.";
     public static String NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG = "No (valid) keyed fields (and values) specified.";
-    
 
     public QueryRecord queryRecord;
 
     int status = 0;
-    public int pairsNo=0;
-    public int noMatchesNo=0;
-    public int distanceNo=0;
-    public HashMap<String,Integer> mm=new HashMap<String,Integer>();
-    
 
-    
     transient HashMap<String, RecordList> recordListMap = new HashMap<String, RecordList>();
 
     String msg = "";
@@ -50,28 +41,43 @@ public class Result implements Serializable {
 
     transient HashMap<String, Record> globalMap;
 
+    AtomicInteger pairsNo = new AtomicInteger(0);
+
+    public void incPairsNo() {
+        pairsNo.set(pairsNo.incrementAndGet());
+    }
+
+    public int getPairsNo() {
+        return pairsNo.get();
+    }
+
     ArrayList<Record> resultList = new ArrayList<Record>();
 
     boolean remote = false;
-    public boolean isRemote(){
+
+    public boolean isRemote() {
         return remote;
     }
-    
-    public void setRemote(){
-        remote=true;
+
+    public void setRemote() {
+        remote = true;
+        if (this.getRecords() != null) {
+            for (int i = 0; i < this.getRecords().size(); i++) {
+                this.getRecords().get(i).setRemote();
+            }
+        }
     }
-    
+
     String remoteServer;
-    public void setRemoteServer(String server){
+
+    public void setRemoteServer(String server) {
         remoteServer = server;
     }
-    public String getRemoteServer(){
+
+    public String getRemoteServer() {
         return remoteServer;
     }
-    
-    
-    
-    
+
     public HashMap<String, Record> getMap(String fieldName) {
         if (recordListMap.containsKey(fieldName)) {
             return recordListMap.get(fieldName).m;
@@ -114,15 +120,15 @@ public class Result implements Serializable {
         HashMap map = new HashMap();
         for (int i = 0; i < this.resultList.size(); i++) {
             Record rec = this.resultList.get(i);
-            Object v = rec.get(fieldName);            
+            Object v = rec.get(fieldName);
             map.put(v, fieldName);
         }
         Set<String> keys = map.keySet(); // The set of keys in the map.
         Iterator<String> keyIter = keys.iterator();
-        ArrayList<Record> arr=new ArrayList<Record>();
+        ArrayList<Record> arr = new ArrayList<Record>();
         while (keyIter.hasNext()) {
             String key = keyIter.next();
-            Record rec=new Record();
+            Record rec = new Record();
             rec.set(fieldName, key);
             arr.add(rec);
         }
@@ -132,11 +138,11 @@ public class Result implements Serializable {
     public void prepare() {
         ArrayList<String> fieldNames = queryRecord.getQueryFieldNames(); //   queryRecord.getFieldNames();  // 
         HashMap<String, HashMap<String, Record>> mapField = new HashMap<String, HashMap<String, Record>>();
-        
+
         for (int i = 0; i < fieldNames.size(); i++) {
             String fieldName = fieldNames.get(i);
             if (fieldName.endsWith(Key.TOKENS)) {
-                continue;             
+                continue;
             }
             HashMap<String, Record> map = recordListMap.get(fieldName).getRecords();
             mapField.put(fieldName, map);
@@ -164,7 +170,6 @@ public class Result implements Serializable {
         }
     }
 
-    
     public Result(QueryRecord rec) {
         queryRecord = rec;
         ArrayList<String> fieldNames = queryRecord.getQueryFieldNames();
@@ -175,8 +180,8 @@ public class Result implements Serializable {
         }
     }
 
-    public boolean add(String fieldName, Record rec) {       
-        if (recordListMap.containsKey(fieldName)) {            
+    public boolean add(String fieldName, Record rec) {
+        if (recordListMap.containsKey(fieldName)) {
             return recordListMap.get(fieldName).add(rec);
         }
         return false;
@@ -186,7 +191,6 @@ public class Result implements Serializable {
         return queryRecord;
     }
 
-   
     public int getDataRecordsSize(String fieldName) {
         if (recordListMap.containsKey(fieldName)) {
             return recordListMap.get(fieldName).getDataRecordsSize();
@@ -194,6 +198,4 @@ public class Result implements Serializable {
         return 0;
     }
 
-  
-    
 }
