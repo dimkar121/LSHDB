@@ -24,6 +24,10 @@ public class Node {
     boolean enabled = true;
     boolean local = false;
     
+    public void disable(){
+        this.enabled = false;
+    }
+    
     public boolean isEnabled(){
         return (enabled==true);
     }

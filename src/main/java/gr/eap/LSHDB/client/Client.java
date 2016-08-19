@@ -9,6 +9,7 @@ package gr.eap.LSHDB.client;
  * @author
  *
  */
+import gr.eap.LSHDB.NodeCommunicationException;
 import gr.eap.LSHDB.util.QueryRecord;
 import gr.eap.LSHDB.util.Record;
 import gr.eap.LSHDB.util.Result;
@@ -42,7 +43,7 @@ public class Client {
         this.port = port;
     }
 
-    public Result queryServer(QueryRecord query) throws ConnectException, UnknownHostException {
+    public Result queryServer(QueryRecord query) throws ConnectException, UnknownHostException, NodeCommunicationException {
         try {
             socket = new Socket(server, port);
             outputStream = new ObjectOutputStream(socket.getOutputStream());
@@ -51,14 +52,13 @@ public class Client {
             Result result = (Result) reply.readObject();
             socket.close();
             return result;
-        } catch (ConnectException cex) {
-            throw cex;
-        } catch (IOException ioex) {
-            ioex.printStackTrace();
-        } catch (ClassNotFoundException cnfex) {
-            cnfex.printStackTrace();
-        }
-        return null;
+        } catch (ConnectException ex) {
+            throw ex;
+        } catch (IOException ex) {
+            throw new NodeCommunicationException(ex.getMessage());
+        } catch (ClassNotFoundException ex) {
+            throw new NodeCommunicationException(ex.getMessage());
+        }        
     }
 
     public Object submitCommand(String cmd) throws ConnectException, UnknownHostException {

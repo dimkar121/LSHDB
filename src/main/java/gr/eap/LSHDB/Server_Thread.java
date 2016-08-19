@@ -6,7 +6,7 @@ package gr.eap.LSHDB;
 
 /**
  *
- * @author dimkar 
+ * @author dimkar
  */
 import gr.eap.LSHDB.util.QueryRecord;
 import gr.eap.LSHDB.util.Result;
@@ -104,11 +104,15 @@ public class Server_Thread extends Thread {
                     result = new Result(this.query);
                     result.setStatus(Result.STATUS_OK);
                     long tStartInd = System.nanoTime();
-                    try {
-                        result = db.forkQuery(query);
-                    } catch (NoKeyedFieldsException ex) {
-                        result.setStatus(Result.NO_KEYED_FIELDS_SPECIFIED);
-                    }
+                    
+                        if (!this.query.isClientQuery()) {
+                            result = db.query(this.query);
+                            result.prepare();
+                        } else {
+                            result = db.forkQuery(query);
+                        }
+                    
+
                     long tEndInd = System.nanoTime();
                     long elapsedTimeInd = tEndInd - tStartInd;
                     double secondsInd = elapsedTimeInd / 1.0E09;
@@ -123,12 +127,22 @@ public class Server_Thread extends Thread {
                     result.setMsg(Result.STORE_NOT_FOUND_ERROR_MSG);
                     ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
                     outputStream.writeObject(result);
-                    //socket.close();
-                    //return;
+                } catch (NoKeyedFieldsException ex) {
+                    result.setStatus(Result.NO_KEYED_FIELDS_SPECIFIED);
+                    result.setMsg(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);
+                    ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+                    outputStream.writeObject(result);
+                } catch (NodeCommunicationException ex) {
+                    result.setStatus(Result.NO_KEYED_FIELDS_SPECIFIED);
+                    result.setMsg("Communication error");
+                    ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+                    outputStream.writeObject(result);
                 }
 
             }
 
+            
+            
             if (stream instanceof String) {
                 String msg = (String) stream;
                 StringBuffer response = new StringBuffer("");
@@ -168,7 +182,6 @@ public class Server_Thread extends Thread {
                     DataStore lsh = getDB(dbName);
                     sendMsgAsObject(lsh.getConfiguration().getKeyFieldNames());
                 }
-
 
             }
 
