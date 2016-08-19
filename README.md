@@ -97,7 +97,7 @@ we narrow the reults, which get closer to the query value ("John"):
 - Michael __Johnson__ Unifying Set-Based  Delta-Based and Edit-Based Lenses
 - Rachel St. __John__ Spatially explicit forest harvest scheduling with difference equations etc.
 
-##Running LSHDB as a server isntance
+##Running LSHDB as a server instance
 In case one needs to run LSHDB as a server instance, then, should provide the following minimum configuration:
 ```xml
 <LSHDB>
@@ -149,7 +149,7 @@ Assuming a fully functional instance running on `localhost` at port `4443`, whic
 			         }
                            	 out += "</table>";
 			}
-                        document.getElementById("id01").innerHTML = out;
+                        $('#container').html(out);
         }
     });
 ```
