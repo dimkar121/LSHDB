@@ -52,10 +52,12 @@ public class Client {
             Result result = (Result) reply.readObject();
             socket.close();
             return result;
-        } catch (ConnectException ex) {
-            throw ex;
         } catch (IOException ex) {
-            throw new NodeCommunicationException(ex.getMessage());
+            System.out.println(ex.getMessage());
+            if (ex instanceof ConnectException)
+              throw new ConnectException("server="+server+" at port="+port);
+            else
+              throw new NodeCommunicationException(ex.getMessage());            
         } catch (ClassNotFoundException ex) {
             throw new NodeCommunicationException(ex.getMessage());
         }        

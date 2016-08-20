@@ -88,7 +88,7 @@ public class Server {
 
     public void communicate() {
         try {
-            serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket(port, 1000);
 
             while (true) {
                 c++;

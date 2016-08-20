@@ -94,14 +94,14 @@ public class Server_Thread extends Thread {
 
             if (stream instanceof QueryRecord) {
                 try {
-                    this.query = (QueryRecord) stream;
+                    this.query = (QueryRecord) stream;                    
+                    result = new Result(this.query);
                     String dsName = this.query.getStoreName();
                     DataStore db = getDB(dsName);
                     if (db == null) {
                         throw new StoreInitException(Result.STORE_NOT_FOUND_ERROR_MSG + "(" + dsName + ")");
                     }
 
-                    result = new Result(this.query);
                     result.setStatus(Result.STATUS_OK);
                     long tStartInd = System.nanoTime();
                     
@@ -188,7 +188,7 @@ public class Server_Thread extends Thread {
             socket.close();
 
         } catch (IOException ex2) {
-            ex2.printStackTrace();
+            System.out.println(ex2.getMessage());
         }
     }
 }
