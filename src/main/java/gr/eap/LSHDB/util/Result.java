@@ -10,6 +10,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -21,14 +22,16 @@ public class Result implements Serializable {
 
     public static final long serialVersionUID = 555L;
 
-    public static int STATUS_OK = 0;
-    public static int STORE_NOT_FOUND = 1;
-    public static int NO_QUERY_VALUES_SPECIFIED = 2;
-    public static int NO_KEYED_FIELDS_SPECIFIED = 3;
+    public final static int STATUS_OK = 0;
+    public final static int STORE_NOT_FOUND = 1;
+    public final static int NO_QUERY_VALUES_SPECIFIED = 2;
+    public final static int NO_KEYED_FIELDS_SPECIFIED = 3;
+    public final static int NULL_RESULT_RETURNED = 4;
+     public final static int NO_CONNECT = 4;
 
-    public static String STORE_NOT_FOUND_ERROR_MSG = "The specified store does not exist.";
-    public static String NO_QUERY_VALUES_SPECIFIED_ERROR_MSG = "No query values specified.";
-    public static String NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG = "No (valid) keyed fields (and values) specified.";
+    public final static String STORE_NOT_FOUND_ERROR_MSG = "The specified store does not exist.";
+    public final static String NO_QUERY_VALUES_SPECIFIED_ERROR_MSG = "No query values specified.";
+    public final static String NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG = "No (valid) keyed fields (and values) specified.";
 
     public QueryRecord queryRecord;
 
@@ -51,6 +54,15 @@ public class Result implements Serializable {
         return pairsNo.get();
     }
 
+    HashMap<String, Integer> distributedStatusMap=new HashMap<String, Integer>();
+    public void setStatus(String server, int error){
+        distributedStatusMap.put(server,error);
+    }
+    public Iterator getStatusIterator(){
+         Iterator it = distributedStatusMap.entrySet().iterator();
+         return it;
+    }
+    
     ArrayList<Record> resultList = new ArrayList<Record>();
 
     boolean remote = false;
@@ -68,14 +80,14 @@ public class Result implements Serializable {
         }
     }
 
-    String remoteServer;
+    String origin;
 
-    public void setRemoteServer(String server) {
-        remoteServer = server;
+    public void setOrigin(String server) {
+        origin = server;
     }
 
-    public String getRemoteServer() {
-        return remoteServer;
+    public String getOrigin() {
+        return origin;
     }
 
     public HashMap<String, Record> getMap(String fieldName) {

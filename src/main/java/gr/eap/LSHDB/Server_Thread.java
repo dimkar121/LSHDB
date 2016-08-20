@@ -8,25 +8,23 @@ package gr.eap.LSHDB;
  *
  * @author dimkar
  */
+import static gr.eap.LSHDB.JSON.MAX_NO_RESULTS;
+import static gr.eap.LSHDB.JSON.SIMILARITY_SLIDING_PERCENTAGE;
 import gr.eap.LSHDB.util.QueryRecord;
 import gr.eap.LSHDB.util.Result;
+import gr.eap.LSHDB.util.ConfigurationQuery;
+import gr.eap.LSHDB.util.ConfigurationReply;
 import gr.eap.LSHDB.util.URLUtil;
 import java.net.*;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
-import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
-import org.codehaus.jackson.annotate.JsonMethod;
-import org.codehaus.jackson.map.ObjectMapper;
 
 public class Server_Thread extends Thread {
 
-    public static String GET_KEYED_FIELDS = "GET KEYED FIELDS FROM _";
-    public static String GET_KEYED_STORES = "GET KEYED STORES";
     private Socket socket = null;
     private QueryRecord query;
     private DataStore[] lsh;
@@ -51,7 +49,7 @@ public class Server_Thread extends Thread {
         return null;
     }
 
-    public void sendMsgAsObject(Object response) throws IOException {
+    public void sendObject(Object response) throws IOException {
         ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
         outputStream.writeObject(response);
         outputStream.flush();
@@ -63,6 +61,45 @@ public class Server_Thread extends Thread {
         writer.write(response);
         writer.flush();
         writer.close();
+    }
+
+    public Result queryStore() {
+        try {
+            result = new Result(this.query);
+            String dsName = this.query.getStoreName();
+            DataStore db = getDB(dsName);
+            if (db == null) {
+                result.setStatus(Result.STORE_NOT_FOUND);
+                result.setMsg(Result.STORE_NOT_FOUND_ERROR_MSG);
+            } else {
+
+                //result.setStatus(Result.STATUS_OK);
+                long tStartInd = System.nanoTime();
+
+                if (!this.query.isClientQuery()) {
+                    result = db.query(this.query);
+                    result.setStatus(Result.STATUS_OK);
+                    result.prepare();
+                } else {
+                    result = db.forkQuery(query);
+                }
+
+                if (result == null) {
+                    result = new Result(this.query);
+                }
+                long tEndInd = System.nanoTime();
+                long elapsedTimeInd = tEndInd - tStartInd;
+                double secondsInd = elapsedTimeInd / 1.0E09;
+                result.setTime(secondsInd);
+                System.out.println("Query completed in " + secondsInd + " secs.");
+                result.prepare();
+            }
+
+        } catch (NoKeyedFieldsException ex) {
+            result.setStatus(Result.NO_KEYED_FIELDS_SPECIFIED);
+            result.setMsg(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);
+        }
+        return result;
     }
 
     public void run() {
@@ -93,95 +130,89 @@ public class Server_Thread extends Thread {
         try {
 
             if (stream instanceof QueryRecord) {
-                try {
-                    this.query = (QueryRecord) stream;                    
-                    result = new Result(this.query);
-                    String dsName = this.query.getStoreName();
-                    DataStore db = getDB(dsName);
-                    if (db == null) {
-                        throw new StoreInitException(Result.STORE_NOT_FOUND_ERROR_MSG + "(" + dsName + ")");
-                    }
-
-                    result.setStatus(Result.STATUS_OK);
-                    long tStartInd = System.nanoTime();
-                    
-                        if (!this.query.isClientQuery()) {
-                            result = db.query(this.query);
-                            result.prepare();
-                        } else {
-                            result = db.forkQuery(query);
-                        }
-                    
-
-                    long tEndInd = System.nanoTime();
-                    long elapsedTimeInd = tEndInd - tStartInd;
-                    double secondsInd = elapsedTimeInd / 1.0E09;
-                    result.setTime(secondsInd);
-                    System.out.println("Query completed in " + secondsInd + " secs.");
-                    ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
-                    result.prepare();
-                    outputStream.writeObject(result);
-                    outputStream.close();
-                } catch (StoreInitException ex) {
-                    result.setStatus(Result.STORE_NOT_FOUND);
-                    result.setMsg(Result.STORE_NOT_FOUND_ERROR_MSG);
-                    ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
-                    outputStream.writeObject(result);
-                } catch (NoKeyedFieldsException ex) {
-                    result.setStatus(Result.NO_KEYED_FIELDS_SPECIFIED);
-                    result.setMsg(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG);
-                    ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
-                    outputStream.writeObject(result);
-                } catch (NodeCommunicationException ex) {
-                    result.setStatus(Result.NO_KEYED_FIELDS_SPECIFIED);
-                    result.setMsg("Communication error");
-                    ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
-                    outputStream.writeObject(result);
-                }
-
+                this.query = (QueryRecord) stream; 
+                Result result = queryStore();
+                ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+                outputStream.writeObject(result);
+                outputStream.close();
             }
 
-            
-            
-            if (stream instanceof String) {
-                String msg = (String) stream;
-                StringBuffer response = new StringBuffer("");
-
-                if (msg.startsWith(JSON.JSON_REQUEST)) {
-                    JSON json = new JSON();
-                    String dbName = json.getDbName(msg);
-                    String s = json.convert(msg, getDB(dbName));
-                    sendMsgAsStream(s);
-                    socket.close();
-                    return;
-
-                }
-
-                if (msg.equals("SHOW STORES")) {
-                    for (int i = 0; i < lsh.length; i++) {
-                        response.append(lsh[i].getDbName());
-                        response.append(" meterialized by ");
-                        response.append(lsh[i].getDbEngine());
-                        response.append("\\n");
+            if (stream instanceof ConfigurationQuery) {
+                ConfigurationQuery conf = (ConfigurationQuery) stream;
+                ConfigurationReply reply = new ConfigurationReply();
+                int queryNo = conf.getQueryNo();
+                if (queryNo == ConfigurationQuery.GET_KEYED_FIELDS) {
+                    String dsStoreName = conf.getStoreName();
+                    DataStore lsh = getDB(dsStoreName);
+                    reply.setStatus(Result.STATUS_OK);
+                    if (lsh == null) {
+                        reply.setStatus(Result.STORE_NOT_FOUND);
+                    } else {
+                        reply.setReply(lsh.getConfiguration().getKeyFieldNames());
                     }
-                    sendMsgAsObject(response);
                 }
-
-                if (msg.equals(GET_KEYED_STORES)) {
+                if (queryNo == ConfigurationQuery.GET_KEYED_STORES) {
                     Vector<String> dbs = new Vector<String>();
                     for (int i = 0; i < lsh.length; i++) {
                         if (lsh[i].getConfiguration().isKeyed()) {
                             dbs.add(lsh[i].getDbName());
                         }
                     }
-                    sendMsgAsObject(dbs);
+                    reply.setStatus(Result.STATUS_OK);
+                    reply.setReply(dbs);
+                }
+                sendObject(reply);
+            }
+
+            if (stream instanceof String) {
+                String request = (String) stream;
+                //StringBuffer response = new StringBuffer("");
+                String response = "";
+                try {
+                    if (request.startsWith(JSON.JSON_REQUEST)) {
+                        JSON json = new JSON(request);
+                        QueryRecord query = json.buildQueryRecord();
+                        double sim = json.getSimilarity();
+                        Map<String, String> requestKeys = json.getRequestKeys();
+
+                        DataStore db = getDB(json.getStoreName());
+                        if (db != null) {
+                            if (requestKeys.entrySet().size() > 0) {
+                                Iterator it = requestKeys.entrySet().iterator();
+                                while (it.hasNext()) {
+                                    Map.Entry pair = (Map.Entry) it.next();
+                                    query.set(pair.getKey() + "", pair.getValue());
+
+                                    if (db.getConfiguration().isKeyed) {
+                                        String value = (String) pair.getValue();
+                                        //System.out.println("name="+pair.getKey()+" value=" + value + ".");
+                                        String[] values = value.split(" ");
+
+                                        query.set(pair.getKey() + "", value, sim, true);
+                                        query.set(pair.getKey() + Key.TOKENS, values, sim, true);
+                                    } else {
+                                        query.set(pair.getKey() + "", pair.getValue());
+                                    }
+
+                                    //System.out.println(pair.getKey() + " = " + pair.getValue());
+                                }
+                            } else {
+                                throw new JSONException(Result.NO_QUERY_VALUES_SPECIFIED_ERROR_MSG, Result.NO_QUERY_VALUES_SPECIFIED);
+                            }
+                            if (!db.getConfiguration().isKeyed) {
+                                query.set(sim, true);
+                            }
+                        }
+                        Result result = queryStore();
+                        response = json.prepare(result);
+                    }
+
+                } catch (JSONException ex) {
                 }
 
-                if (msg.startsWith(GET_KEYED_FIELDS)) {
-                    String dbName = msg.substring(msg.indexOf("_") + 1);
-                    DataStore lsh = getDB(dbName);
-                    sendMsgAsObject(lsh.getConfiguration().getKeyFieldNames());
-                }
+                sendMsgAsStream(response);
+                socket.close();
+                return;
 
             }
 

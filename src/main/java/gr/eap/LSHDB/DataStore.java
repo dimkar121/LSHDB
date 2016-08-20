@@ -186,7 +186,7 @@ public abstract class DataStore {
         return this.dbEngine;
     }
 
-    public Result queryNodes(QueryRecord queryRecord, Result result) throws NodeCommunicationException {
+    public Result queryNodes(QueryRecord queryRecord, Result result) {
         if (this.getNodes().size() == 0) {
             return result;
         }
@@ -199,37 +199,42 @@ public abstract class DataStore {
             final Node node = this.getNodes().get(i);
             if (node.isEnabled()) {
                 callables.add(new Callable<Result>() {
-                    public Result call() throws StoreInitException, NodeCommunicationException, NoKeyedFieldsException {
+                    public Result call()  {
                         Result r = null;
                         if ((!node.isLocal()) && (q.isClientQuery())) {
                             Client client = new Client(node.url, node.port);
                             try {
                                 QueryRecord newQuery = (QueryRecord) q.clone();
-                                newQuery.setServerQuery();
+                                newQuery.setServerQuery();                                
                                 r = client.queryServer(newQuery);
                                 if (r == null) {
-                                    throw new NodeCommunicationException("Null Result returned due to communication problems with node= " + node.alias);
-                                }
-                                if (r.getStatus() == Result.STORE_NOT_FOUND) {
-                                    throw new StoreInitException("The specified store " + q.getStoreName() + " was not found on " + node.alias);
-                                }
+                                    r = new Result(newQuery);
+                                    r.setStatus(Result.NULL_RESULT_RETURNED);
+                                }                                
                                 r.setRemote();
-                                r.setRemoteServer(node.alias);
-                            } catch (CloneNotSupportedException ex) {
-                                System.out.println(ex.getMessage() + " for QueryRecord object");
-                            } catch (ConnectException ex) {
-                                System.out.println(Client.CONNECTION_ERROR_MSG);
-                                System.out.println("Specified server: " + node.alias + " at " + node.url);
-                                System.out.println("You should either check its availability, or resolve any possible network issues.");
-                            } catch (UnknownHostException ex) {
-                                System.out.println(Client.UNKNOWNHOST_ERROR_MSG);
+                                r.setOrigin(node.alias);                                
+                            } catch (CloneNotSupportedException | NodeCommunicationException ex) {
+                                if (r!=null)                                    
+                                    r=new Result(q);
+                                r.setRemote();
+                                r.setOrigin(node.alias);
+                                r.setStatus(Result.NO_CONNECT);
                             }
 
                         } else if (node.isLocal()) {
-                            r = query(q);
-                            r.prepare();
-                            r.setRemoteServer(node.alias);
+                           try{ 
+                              r = query(q);
+                              r.setStatus(Result.STATUS_OK);
+                              r.prepare();
+                              r.setOrigin(node.alias);
+                           }catch(NoKeyedFieldsException ex){
+                                if (r!=null)                                    
+                                    r=new Result(q);
+                               r.setOrigin(node.alias);
+                               r.setStatus(Result.NO_KEYED_FIELDS_SPECIFIED);
+                           }   
                         }
+                        
                         return r;
                     }
                 });
@@ -242,21 +247,21 @@ public abstract class DataStore {
 
             for (Future<Result> future : futures) {
 
-                if (future != null) {
+                if (future != null) {  //partialResults should not come null
                     partialResults = future.get();
                     if (partialResults != null) {
                         result.getRecords().addAll(partialResults.getRecords());
+                        result.setStatus(partialResults.getOrigin() , partialResults.getStatus());
                     }
                 }
 
             }
         } catch (ExecutionException ex) {
-            System.out.println("......................Cannot create threads");            
             if (ex.getCause() != null) {
                 System.out.println(ex.getCause().getMessage());
                 if (ex.getCause() instanceof Error) {
-                    System.out.println("--------------Fatal error occurred on " + partialResults.getRemoteServer());
-                    Node node = getNode(partialResults.getRemoteServer());
+                    System.out.println("Fatal error occurred on " + partialResults.getOrigin());
+                    Node node = getNode(partialResults.getOrigin());
                     if (node != null) {
                         node.disable();
                     }
@@ -264,7 +269,6 @@ public abstract class DataStore {
 
             }
         } catch (InterruptedException ex) {
-            System.out.println("......................Cannot create threads");            
             System.out.println(ex.getMessage());
         }
 
@@ -272,9 +276,8 @@ public abstract class DataStore {
         return result;
     }
 
-    public Result forkQuery(QueryRecord q) throws StoreInitException, NoKeyedFieldsException, NodeCommunicationException {
+    public Result forkQuery(QueryRecord q)  {
         // if one throws it does not mean that the whole result should be invalidated.
-
         Result r = null;
         r = queryNodes(q, new Result(q));
         return r;
@@ -369,7 +372,7 @@ public abstract class DataStore {
             System.out.println("......................Cannot create threads");
             System.out.println(ex.getMessage());
         } catch (InterruptedException ex) {
-            System.out.println("......................Cannot create threads");            
+            System.out.println("......................Cannot create threads");
             System.out.println(ex.getMessage());
         }
         executorService.shutdown();

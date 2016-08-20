@@ -24,8 +24,31 @@ public class JSON {
     public static String SIMILARITY_SLIDING_PERCENTAGE = "simPer";
     public static String CALLBACK = "callback";
     public static String ERROR = "error";
-    public static String ERROR_MSG = "errorMessage";    
-    
+    public static String ERROR_MSG = "errorMessage";
+
+    String request;
+    String dsName;
+    String returnField;
+    String callBack;
+
+    public String getStoreName() {
+        return dsName;
+    }
+    double sim;
+
+    public double getSimilarity() {
+        return sim;
+    }
+    Map<String, String> requestKeys;
+
+    public Map<String, String> getRequestKeys() {
+        return requestKeys;
+    }
+
+    public JSON(String request) {
+        this.request = request;
+    }
+
     public String toJSON(Object o) {
         ObjectMapper mapper = new ObjectMapper();
         //Object to JSON in String
@@ -52,112 +75,55 @@ public class JSON {
     public HashMap parseError(String msg, int error) {
         HashMap m = new HashMap();
         m.put(ERROR, error);
-        m.put(ERROR_MSG, msg);        
+        m.put(ERROR_MSG, msg);
         return m;
     }
 
-    public String getDbName(String msg) {
-        msg = msg.replaceAll(JSON_REQUEST, "");
-        String dbName = msg.substring(0, msg.indexOf("?"));
-        return dbName;
+    public String buildStoreName() {
+        request = request.replaceAll(JSON_REQUEST, "");
+        String dsName = request.substring(0, request.indexOf("?"));
+        return dsName;
     }
 
-    public String convert(String msg, DataStore db) {
+    public String prepare(Result result) {
+        result.prepare();
         String s = "";
-        msg = msg.replaceAll(JSON_REQUEST, "");
-        String dbName = msg.substring(0, msg.indexOf("?"));
-        msg = msg.replaceAll(dbName, "");
-        msg = msg.replaceAll("\\?", "");
-        msg = msg.substring(0, msg.indexOf(' '));
-        String callback = URLUtil.getRequestKey(msg, CALLBACK);
-        String returnField = URLUtil.getRequestKey(msg, RETURNED_FIELD);
-        try {
-            int simPercentage = 100;
-            try {
-                simPercentage = Integer.parseInt(URLUtil.getRequestKey(msg, SIMILARITY_SLIDING_PERCENTAGE));
-            } catch (NumberFormatException ex) {
-                simPercentage = 100;
-            }
-            int maxNoResults = 20;
-            try {
-                maxNoResults = Integer.parseInt(URLUtil.getRequestKey(msg, MAX_NO_RESULTS));
-            } catch (NumberFormatException ex) {
-                maxNoResults = 20;
-            }
-
-            QueryRecord query = new QueryRecord(dbName, maxNoResults);
-            double sim = simPercentage * 1.0 / 100;
-
-            Map<String, String> m = URLUtil.splitQuery(msg);
-
-            if (db != null) {
-                if (m.entrySet().size() > 0) {
-                    Iterator it = m.entrySet().iterator();
-                    while (it.hasNext()) {
-                        Map.Entry pair = (Map.Entry) it.next();
-                        query.set(pair.getKey() + "", pair.getValue());
-
-                        if (db.getConfiguration().isKeyed) {
-                            String value = (String) pair.getValue();
-                            //System.out.println("name="+pair.getKey()+" value=" + value + ".");
-                            String[] values = value.split(" ");
-
-                            query.set(pair.getKey() + "", value, sim, true);
-                            query.set(pair.getKey() + Key.TOKENS, values, sim, true);
-                        } else {
-                            query.set(pair.getKey() + "", pair.getValue());
-                        }
-
-                        //System.out.println(pair.getKey() + " = " + pair.getValue());
-                    }
-                } else {
-                    throw new JSONException(Result.NO_QUERY_VALUES_SPECIFIED_ERROR_MSG, Result.NO_QUERY_VALUES_SPECIFIED);
-                }
-                if (!db.getConfiguration().isKeyed) {
-                    query.set(sim, true);
-                }
-                long tStartInd = System.nanoTime();
-                Result result=null;               
-                try{
-                    result = db.forkQuery(query);
-                }catch(NoKeyedFieldsException ex){
-                     throw new JSONException(Result.NO_KEYED_FIELDS_SPECIFIED_ERROR_MSG, Result.NO_KEYED_FIELDS_SPECIFIED);
-                }catch(StoreInitException ex){
-                     throw new JSONException(Result.STORE_NOT_FOUND_ERROR_MSG, Result.STORE_NOT_FOUND );
-                } catch(NodeCommunicationException ex){
-                     throw new JSONException(" Communication Problem", Result.STORE_NOT_FOUND );
-                }
-                
-                result.setStatus(Result.STATUS_OK);
-                long tEndInd = System.nanoTime();
-                long elapsedTimeInd = tEndInd - tStartInd;
-                double secondsInd = elapsedTimeInd / 1.0E09;
-                result.setTime(secondsInd);
-                System.out.println("Query completed in " + secondsInd + " secs.");
-                result.prepare();
-                if (returnField != null) {
-                    s = toJSON(result.getUniqueRecords(returnField));
-                } else {
-                    s = toJSON(result.getRecords());
-                }
-
-                //System.out.println(ss);
-            } else {
-                throw new JSONException(Result.STORE_NOT_FOUND_ERROR_MSG, Result.STORE_NOT_FOUND);
-            }
-            if (callback != null) {
-                s = callback + " ( " + s + " ) ";
-            }
-        } catch (JSONException ex) {
-            HashMap h = parseError(ex.getMessage(), ex.error);
-            s = toJSON(h);
-            System.out.println(ERROR + ": " + ex.getMessage());
-            if (callback != null) {
-                s = callback + " ( " + s + " ) ";
-            }
-            return s;
+        if (returnField != null) {
+            s = toJSON(result.getUniqueRecords(returnField));
+        } else {
+            s = toJSON(result.getRecords());
         }
-        return s;
+      return s;   
     }
+
+    
+    
+    public QueryRecord buildQueryRecord() throws JSONException {
+        String storeName = buildStoreName();
+        String s = "";
+        request = request.replaceAll(storeName, "");
+        request = request.replaceAll("\\?", "");
+        request = request.substring(0, request.indexOf(' '));
+        callBack = URLUtil.getRequestKey(request, CALLBACK);
+        returnField = URLUtil.getRequestKey(request, RETURNED_FIELD);
+        int simPercentage = 100;
+        try {
+            simPercentage = Integer.parseInt(URLUtil.getRequestKey(request, SIMILARITY_SLIDING_PERCENTAGE));
+        } catch (NumberFormatException ex) {
+            simPercentage = 100;
+        }
+        int maxNoResults = 20;
+        try {
+            maxNoResults = Integer.parseInt(URLUtil.getRequestKey(request, MAX_NO_RESULTS));
+        } catch (NumberFormatException ex) {
+            maxNoResults = 20;
+        }
+        QueryRecord query = new QueryRecord(storeName, maxNoResults);
+        sim = simPercentage * 1.0 / 100;
+        requestKeys = URLUtil.splitQuery(request);
+        return query;
+    }
+
+    
 
 }

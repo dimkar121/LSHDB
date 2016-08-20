@@ -10,11 +10,11 @@ package gr.eap.LSHDB.client;
  *
  */
 import gr.eap.LSHDB.NodeCommunicationException;
+import gr.eap.LSHDB.util.ConfigurationQuery;
+import gr.eap.LSHDB.util.ConfigurationReply;
 import gr.eap.LSHDB.util.QueryRecord;
-import gr.eap.LSHDB.util.Record;
 import gr.eap.LSHDB.util.Result;
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
@@ -23,8 +23,6 @@ import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.StringTokenizer;
 
 public class Client {
 
@@ -43,7 +41,7 @@ public class Client {
         this.port = port;
     }
 
-    public Result queryServer(QueryRecord query) throws ConnectException, UnknownHostException, NodeCommunicationException {
+    public Result queryServer(QueryRecord query) throws  NodeCommunicationException {
         try {
             socket = new Socket(server, port);
             outputStream = new ObjectOutputStream(socket.getOutputStream());
@@ -52,17 +50,27 @@ public class Client {
             Result result = (Result) reply.readObject();
             socket.close();
             return result;
-        } catch (IOException ex) {
-            System.out.println(ex.getMessage());
-            if (ex instanceof ConnectException)
-              throw new ConnectException("server="+server+" at port="+port);
-            else
-              throw new NodeCommunicationException(ex.getMessage());            
-        } catch (ClassNotFoundException ex) {
-            throw new NodeCommunicationException(ex.getMessage());
+        } catch (IOException | ClassNotFoundException ex) {
+               throw new NodeCommunicationException(ex.getMessage());
         }        
     }
 
+    public ConfigurationReply queryConf(ConfigurationQuery query) throws  NodeCommunicationException {
+        try {
+            socket = new Socket(server, port);
+            outputStream = new ObjectOutputStream(socket.getOutputStream());
+            outputStream.writeObject(query);
+            reply = new ObjectInputStream(socket.getInputStream());
+            ConfigurationReply confReply  = (ConfigurationReply) reply.readObject();
+            socket.close();
+            return confReply;
+        } catch (IOException | ClassNotFoundException ex) {
+               throw new NodeCommunicationException(ex.getMessage());
+        }        
+    }
+    
+    
+    
     public Object submitCommand(String cmd) throws ConnectException, UnknownHostException {
         try {
             Socket socket = new Socket(server, port);
