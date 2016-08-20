@@ -62,6 +62,9 @@ public class Result implements Serializable {
          Iterator it = distributedStatusMap.entrySet().iterator();
          return it;
     }
+    public HashMap<String, Integer> getStatusMap(){
+        return distributedStatusMap;
+    }
     
     ArrayList<Record> resultList = new ArrayList<Record>();
 

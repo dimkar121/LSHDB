@@ -186,7 +186,8 @@ public abstract class DataStore {
         return this.dbEngine;
     }
 
-    public Result queryNodes(QueryRecord queryRecord, Result result) {
+    public Result forkQuery(QueryRecord queryRecord) {
+        Result result = new Result(queryRecord); 
         if (this.getNodes().size() == 0) {
             return result;
         }
@@ -200,7 +201,7 @@ public abstract class DataStore {
             if (node.isEnabled()) {
                 callables.add(new Callable<Result>() {
                     public Result call()  {
-                        Result r = null;
+                        Result r = null;        
                         if ((!node.isLocal()) && (q.isClientQuery())) {
                             Client client = new Client(node.url, node.port);
                             try {
@@ -214,7 +215,7 @@ public abstract class DataStore {
                                 r.setRemote();
                                 r.setOrigin(node.alias);                                
                             } catch (CloneNotSupportedException | NodeCommunicationException ex) {
-                                if (r!=null)                                    
+                                if (r==null)                                    
                                     r=new Result(q);
                                 r.setRemote();
                                 r.setOrigin(node.alias);
@@ -234,7 +235,6 @@ public abstract class DataStore {
                                r.setStatus(Result.NO_KEYED_FIELDS_SPECIFIED);
                            }   
                         }
-                        
                         return r;
                     }
                 });
@@ -246,8 +246,9 @@ public abstract class DataStore {
             List<Future<Result>> futures = executorService.invokeAll(callables);
 
             for (Future<Result> future : futures) {
-
+                    
                 if (future != null) {  //partialResults should not come null
+                    
                     partialResults = future.get();
                     if (partialResults != null) {
                         result.getRecords().addAll(partialResults.getRecords());
@@ -276,12 +277,7 @@ public abstract class DataStore {
         return result;
     }
 
-    public Result forkQuery(QueryRecord q)  {
-        // if one throws it does not mean that the whole result should be invalidated.
-        Result r = null;
-        r = queryNodes(q, new Result(q));
-        return r;
-    }
+    
 
     public int getThreadsNo() {
         ThreadMXBean bean = ManagementFactory.getThreadMXBean();

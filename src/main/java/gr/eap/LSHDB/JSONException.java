@@ -21,7 +21,7 @@ package gr.eap.LSHDB;
  */
 public class JSONException extends Exception{
     int error;
-    public JSONException(String message, int error){
+    public JSONException(int error, String message){
          super(message);
          this.error=error;
      }

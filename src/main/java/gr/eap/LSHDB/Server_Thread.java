@@ -8,17 +8,15 @@ package gr.eap.LSHDB;
  *
  * @author dimkar
  */
-import static gr.eap.LSHDB.JSON.MAX_NO_RESULTS;
-import static gr.eap.LSHDB.JSON.SIMILARITY_SLIDING_PERCENTAGE;
 import gr.eap.LSHDB.util.QueryRecord;
 import gr.eap.LSHDB.util.Result;
 import gr.eap.LSHDB.util.ConfigurationQuery;
 import gr.eap.LSHDB.util.ConfigurationReply;
-import gr.eap.LSHDB.util.URLUtil;
 import java.net.*;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
@@ -73,7 +71,6 @@ public class Server_Thread extends Thread {
                 result.setMsg(Result.STORE_NOT_FOUND_ERROR_MSG);
             } else {
 
-                //result.setStatus(Result.STATUS_OK);
                 long tStartInd = System.nanoTime();
 
                 if (!this.query.isClientQuery()) {
@@ -130,7 +127,7 @@ public class Server_Thread extends Thread {
         try {
 
             if (stream instanceof QueryRecord) {
-                this.query = (QueryRecord) stream; 
+                this.query = (QueryRecord) stream;
                 Result result = queryStore();
                 ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
                 outputStream.writeObject(result);
@@ -168,14 +165,15 @@ public class Server_Thread extends Thread {
                 String request = (String) stream;
                 //StringBuffer response = new StringBuffer("");
                 String response = "";
-                try {
-                    if (request.startsWith(JSON.JSON_REQUEST)) {
-                        JSON json = new JSON(request);
-                        QueryRecord query = json.buildQueryRecord();
-                        double sim = json.getSimilarity();
-                        Map<String, String> requestKeys = json.getRequestKeys();
+                if (request.startsWith(JSON.JSON_REQUEST)) {
+                    JSON json = new JSON(request);
 
-                        DataStore db = getDB(json.getStoreName());
+                    QueryRecord query = json.buildQueryRecord();
+                    double sim = json.getSimilarity();
+                    Map<String, String> requestKeys = json.getRequestKeys();
+
+                    DataStore db = getDB(json.getStoreName());
+                    try {
                         if (db != null) {
                             if (requestKeys.entrySet().size() > 0) {
                                 Iterator it = requestKeys.entrySet().iterator();
@@ -197,22 +195,34 @@ public class Server_Thread extends Thread {
                                     //System.out.println(pair.getKey() + " = " + pair.getValue());
                                 }
                             } else {
-                                throw new JSONException(Result.NO_QUERY_VALUES_SPECIFIED_ERROR_MSG, Result.NO_QUERY_VALUES_SPECIFIED);
+                                throw new JSONException(Result.NO_QUERY_VALUES_SPECIFIED, Result.NO_QUERY_VALUES_SPECIFIED_ERROR_MSG);
                             }
                             if (!db.getConfiguration().isKeyed) {
                                 query.set(sim, true);
                             }
+                        } else {
+                            throw new JSONException(Result.STORE_NOT_FOUND, Result.STORE_NOT_FOUND_ERROR_MSG);
                         }
+                        this.query = query;
                         Result result = queryStore();
                         response = json.prepare(result);
+
+                    } catch (JSONException ex) {
+                        HashMap h = json.prepareError(ex.error, ex.getMessage());
+                        response = json.toJSON(h);
                     }
 
-                } catch (JSONException ex) {
+                    if (json.getCallBack() != null) {
+                        StringBuffer sb = new StringBuffer(json.getCallBack());
+                        sb.append(" ( ");
+                        sb.append(response);
+                        sb.append(" ) ");
+                        response = sb.toString();
+                    }
+
                 }
 
                 sendMsgAsStream(response);
-                socket.close();
-                return;
 
             }
 
