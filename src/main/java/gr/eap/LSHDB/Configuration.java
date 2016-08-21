@@ -64,7 +64,7 @@ public abstract class Configuration implements Serializable {
     }
 
     public Configuration(String folder, String dbName, String dbEngine, boolean massInsertMode) throws StoreInitException {
-        try {
+        try{
             this.folder = folder;
             this.dbName = dbName;
             db = DataStoreFactory.build(folder, dbName, "conf", dbEngine, massInsertMode);

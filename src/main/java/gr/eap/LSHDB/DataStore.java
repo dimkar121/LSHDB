@@ -427,8 +427,7 @@ public abstract class DataStore {
     }
 
     public Result query(QueryRecord queryRecord) throws NoKeyedFieldsException {
-        Result result = new Result(queryRecord);
-
+        Result result = new Result(queryRecord);        
         Configuration conf = this.getConfiguration();
         StoreEngine hashKeys = keys;
         StoreEngine dataKeys = data;

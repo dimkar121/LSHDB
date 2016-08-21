@@ -34,7 +34,7 @@ public class Server {
     public Server(String configDir) {
 
         boolean queryRemoteNodes = true;
-        Config config = new Config(configDir + Config.CONFIG_FILE);
+        Config config = new Config(Config.CONFIG_FILE);
         alias = config.get(Config.CONFIG_ALIAS);
         try{
           port = Integer.parseInt(config.get(Config.CONFIG_PORT));

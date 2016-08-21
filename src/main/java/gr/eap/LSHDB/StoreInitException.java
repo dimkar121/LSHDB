@@ -15,14 +15,18 @@
  */
 package gr.eap.LSHDB;
 
+import org.apache.log4j.Logger;
+
 /**
  *
  * @author dimkar
  */
 public class StoreInitException extends Exception{
-    
+    final static Logger log = Logger.getLogger(StoreInitException.class);
+
      public StoreInitException(String message){
          super(message);
+          log.error(message ,this);
      }
      
 }

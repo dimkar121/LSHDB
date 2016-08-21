@@ -6,28 +6,23 @@
 package gr.eap.LSHDB;
 
 import java.lang.reflect.InvocationTargetException;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author dimkar
  */
 public class DataStoreFactory {
-
-    public static StoreEngine build(String folder, String dbName, String file, String dbEngine,boolean massInsertMode) throws ClassNotFoundException, NoSuchMethodException {
+final static Logger log = Logger.getLogger(DataStoreFactory.class);
+    
+    public static StoreEngine build(String folder, String dbName, String file, String dbEngine,boolean massInsertMode) throws ClassNotFoundException, NoSuchMethodException  {
         try {
             Class c = Class.forName(dbEngine);
             StoreEngine db = (StoreEngine) c.getConstructor(String.class,String.class,String.class,boolean.class).newInstance(folder,dbName,file,massInsertMode);
             
-            return db;
-        //} catch (ClassNotFoundException ex) {
-         //   System.err.println(ex + " DataFactory class must be in class path.");
-        } catch (InstantiationException ex) {
-            System.err.println(ex + " DataFacory class must be concrete.");
-        } catch (IllegalAccessException ex) {
-            System.err.println(ex + " DataFactory class must have a no-arg constructor.");
-        }
-        catch (InvocationTargetException ex){
-            ex.printStackTrace();
+            return db;         
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
+            log.error(dbEngine + " Initialization problem of DataStore "  ,ex);
         }
         return null;
     }

@@ -6,13 +6,19 @@
 package gr.eap.LSHDB.util;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -20,11 +26,13 @@ import org.w3c.dom.Node;
  */
 public class Config {
 
+    final static Logger log = Logger.getLogger(Config.class);
+
     public final static String CONFIG_FILE = "config.xml";
     public final static String CONFIG_ALIAS = "alias";
     public final static String CONFIG_PORT = "port";
     public final static String CONFIG_STORE_NAME = "name";
-    public final static String CONFIG_STORE = "store";    
+    public final static String CONFIG_STORE = "store";
     public final static String CONFIG_TARGET = "target";
     public final static String CONFIG_NOSQL_ENGINE = "engine";
     public final static String CONFIG_LSH = "LSHStore";
@@ -36,14 +44,16 @@ public class Config {
     Document document;
 
     public Config(String fileName) {
-        File file = new File(fileName);
-
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try {
+            URI uri = getClass().getClassLoader().getResource(fileName).toURI();
+            File file = new File(uri);
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             DocumentBuilder db = dbf.newDocumentBuilder();
             document = db.parse(file);
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (ParserConfigurationException | SAXException ex) {
+            log.error("XML parsing error during processing config.xml", ex);
+        } catch (IOException | URISyntaxException ex) {
+            log.error("Config.xml not found. ", ex);
         }
     }
 

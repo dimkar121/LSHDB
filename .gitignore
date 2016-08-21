@@ -48,3 +48,4 @@ Temporary Items
 **/gr/eap/LSHDB/priv/**
 /target/**
 /log/**
+/src/main/resources/**
