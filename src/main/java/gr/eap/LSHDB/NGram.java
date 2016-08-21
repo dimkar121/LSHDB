@@ -23,28 +23,6 @@ public class NGram {
         return ngrams;
     }
 
-  /*  public static HashMap<String, Integer> getHashBigrams() {
-        String s1 = "abcdefghijklmnopqrstuvwxyz";
-        int a = 0;
-        HashMap<String, Integer> map = new HashMap();
-        for (int i = 0; i < s1.length(); i++) {
-            char c1 = s1.charAt(i);
-            for (int j = 0; j < s1.length(); j++) {
-                char c2 = s1.charAt(j);
-                String s2 = new String(new char[]{c1, c2});
-                List<String> al = getGrams(s2, 2);
-                for (String s : al) {
-                    map.put(s, a);
-                    a++;
-                }
-
-            }
-        }        
-        return map;
-    }*/
-
-  
-
     
    
 }

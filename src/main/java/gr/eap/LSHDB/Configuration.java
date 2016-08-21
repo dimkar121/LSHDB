@@ -32,6 +32,10 @@ public abstract class Configuration implements Serializable {
 
     HashMap<String, Key> keys = new HashMap<String, Key>();
 
+    public StoreEngine getEngine(){
+        return db;
+    }
+    
     public String[] getKeyFieldNames() {
         return keyFieldNames;
     }

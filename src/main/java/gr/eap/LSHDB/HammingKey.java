@@ -5,14 +5,17 @@
  */
 package gr.eap.LSHDB;
 
+import java.security.InvalidParameterException;
 import java.util.Random;
 import org.apache.commons.math3.distribution.BinomialDistribution;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author dimkar
  */
 public class HammingKey  extends Key{
+    final static Logger log = Logger.getLogger(DataStore.class);
     
     public static final long serialVersionUID = 501L;
     
@@ -20,22 +23,25 @@ public class HammingKey  extends Key{
     public int[][] samples;
     String[] tokens;
     
-    public HammingKey(String keyFieldName, int k,double delta,int t, int size, boolean tokenized,boolean performComparisons){
+    public HammingKey(String keyFieldName, int k,double delta,int t, boolean tokenized,boolean performComparisons, Embeddable emb){
         this.keyFieldName = keyFieldName;
         this.k = k;
         this.delta = delta;    
-        this.t = t;
-        this.size = size;
+        this.t = t;        
+        this.size = emb.getSize();
         optimizeL();  
         this.tokenized = tokenized;
-        System.out.println("L="+this.L);
+        log.info("Number of hash tables generated L="+this.L+" using k="+this.k+" and size="+this.size);
         this.samples = new int[this.L][this.k];
         initSamples(); 
-        this.performComparisons = performComparisons;      
+        this.performComparisons = performComparisons;     
+        //if (emb==null)
+          //  throw new StoreInitException("Embeddable object cannot be null.");
+        setEmbeddable(emb);
     }
     
-    public HammingKey(String keyFieldName){
-        this(keyFieldName,30,.1,75,700,true,true);
+    public HammingKey(String keyFieldName) {       
+      this(keyFieldName,30,.1,75,true,true, new BloomFilter(700,15,2));
     }
     
     public void optimizeL() {

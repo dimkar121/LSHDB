@@ -21,7 +21,9 @@ import java.io.Serializable;
  *
  * @author dimkar
  */
-public abstract class EmbeddingStructure implements Serializable{
-      public static final long serialVersionUID = 6767L;
-     
+public interface Embeddable {
+      public void embed(Object v) throws ClassCastException;
+      public int getSize();
+      public Embeddable freshCopy();
+
 }

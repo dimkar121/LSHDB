@@ -30,9 +30,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import org.apache.log4j.Logger;
 
-public class BloomFilter extends EmbeddingStructure implements Serializable{
-  
+public class BloomFilter implements Embeddable, Serializable, Cloneable{
+    final static Logger log = Logger.getLogger(BloomFilter.class);
     public static final long serialVersionUID = 67671L;
     
     private BitSet bitset;
@@ -44,27 +45,45 @@ public class BloomFilter extends EmbeddingStructure implements Serializable{
     private int[] cols;    
     static final Charset charset = Charset.forName("UTF-8"); // encoding used for storing hash values as strings
 
-    public BloomFilter(String s, int length, int k, int grams, boolean padded) {
+    
+    public BloomFilter(int length, int k, int grams) {
         this.bitSetSize = length;
         this.bitset = new BitSet(bitSetSize);
         this.cols = new int[bitSetSize];
-        this.k = k;
-        this.grams = grams;
         this.bitsSet = 0;
+        this.k = k;
+        this.grams=grams;
+    }
+    
+    public int getSize(){
+        return this.bitSetSize;
+    }
+    
+    public Embeddable freshCopy(){
+        try{
+           return (BloomFilter) this.clone();
+        }catch(CloneNotSupportedException ex){
+            log.error("Error in cloning a BloomFilter.",ex);
+        } 
+      return null;  
+    }
+    
+    public BloomFilter(String s, int length, int k, int grams) {
+        this(length,k,grams);
         encode(s, true);
     }
 
-    public BloomFilter(ArrayList<String> s, int length, int k, int grams, boolean padded) {
-        this.bitSetSize = length;
-        this.bitset = new BitSet(bitSetSize);
-        this.cols = new int[bitSetSize];
-        this.k = k;
-        this.grams = grams;
-        this.bitsSet = 0;
+    public BloomFilter(ArrayList<String> s, int length, int k, int grams) {
+        this(length,k,grams);        
         encode(s, true);
     }
 
-      
+    
+    public void embed(Object v) throws ClassCastException {
+        String s = (String) v;
+        encode(s, true);        
+    }  
+    
 
     public void addElement(String s) {
         //word=binascii.a2b_qp(qgram) # convert to binary
@@ -233,7 +252,7 @@ public class BloomFilter extends EmbeddingStructure implements Serializable{
         }
     }
 
-     public static BitSet toBitSet(String bf) {
+    public static BitSet toBitSet(String bf) {
         BitSet bs = new BitSet(bf.length());
         for (int i = 0; i < bf.length(); i++) {
             if (bf.charAt(i) == '1') {

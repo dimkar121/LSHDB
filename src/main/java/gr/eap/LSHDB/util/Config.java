@@ -35,6 +35,7 @@ public class Config {
     public final static String CONFIG_STORE = "store";
     public final static String CONFIG_TARGET = "target";
     public final static String CONFIG_NOSQL_ENGINE = "engine";
+    public final static String CONFIG_EMBEDDABLE = "embeddable";
     public final static String CONFIG_LSH = "LSHStore";
     public final static String CONFIG_CONFIGURATION = "LSHConfiguration";
     public final static String CONFIG_REMOTE_NODES = "remote_nodes";

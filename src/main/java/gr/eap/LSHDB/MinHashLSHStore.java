@@ -53,7 +53,7 @@ public class MinHashLSHStore extends DataStore {
     
     
     @Override
-    public String buildHashKey(int j, EmbeddingStructure emb, String keyFieldName) {       
+    public String buildHashKey(int j, Embeddable emb, String keyFieldName) {       
         BloomFilter bf = (BloomFilter) emb;        
         BitSet bs = bf.getBitSet();
         Key key = hConf.getKey(keyFieldName);
@@ -98,13 +98,10 @@ public class MinHashLSHStore extends DataStore {
         return bs;
     }
 
-    @Override
-    public HashMap<String, BloomFilter[]> buildEmbeddingStructureMap(Record rec){
-            return toBloomFilter(rec);
-    }
     
     
-    public boolean distance(EmbeddingStructure struct1, EmbeddingStructure struct2, Key key) {
+    
+    public boolean distance(Embeddable struct1, Embeddable struct2, Key key) {
         BloomFilter bf1 = (BloomFilter) struct1;
         BloomFilter bf2 = (BloomFilter) struct2;
         double t = ((MinHashKey) key).t;

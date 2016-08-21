@@ -32,7 +32,7 @@ public class HammingLSHStore extends DataStore {
             hConf = new HammingConfiguration(folder, dbName, dbEngine, massInsertMode);
         } else {
             hConf = (HammingConfiguration) hc;
-        }
+        }        
         init(dbEngine, massInsertMode);
 
     }
@@ -50,13 +50,9 @@ public class HammingLSHStore extends DataStore {
     }
 
     
-    @Override
-    public HashMap<String, BloomFilter[]> buildEmbeddingStructureMap(Record rec){
-            return toBloomFilter(rec);
-    }
     
     
-    public boolean distance(EmbeddingStructure struct1, EmbeddingStructure struct2, Key key) {
+    public boolean distance(Embeddable struct1, Embeddable struct2, Key key) {
         BloomFilter bf1 = (BloomFilter) struct1;
         BloomFilter bf2 = (BloomFilter) struct2;
         int t = ((HammingKey) key).t;
@@ -70,7 +66,7 @@ public class HammingLSHStore extends DataStore {
     }
 
     @Override
-    public String buildHashKey(int j, EmbeddingStructure emb, String keyFieldName) {
+    public String buildHashKey(int j, Embeddable emb, String keyFieldName) {
         BloomFilter bf = (BloomFilter) emb;
         BitSet bs = bf.getBitSet();
         String hashKey = "";
@@ -108,12 +104,18 @@ public class HammingLSHStore extends DataStore {
 
     
     
+    
+    
+    
     public ArrayList<Result> browse(int rowCount) {
         ArrayList<Result> results = new ArrayList<Result>();
 
         return results;
     }
 
+    
+    
+    
     public void save() {
 
     }

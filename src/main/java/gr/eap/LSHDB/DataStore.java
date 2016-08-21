@@ -49,6 +49,9 @@ public abstract class DataStore {
     boolean queryRemoteNodes = false;
     boolean massInsertMode = false;
 
+    
+    
+    
     public void setMassInsertMode(boolean status) {
         massInsertMode = status;
     }
@@ -263,7 +266,7 @@ public abstract class DataStore {
                 String server=" ";
                 if (partialResults!=null)
                     server = partialResults.getOrigin();
-                log.error("forkQuery ereor ",ex);
+                log.error("forkQuery error ",ex);
                 if (ex.getCause() instanceof Error) {
                     log.fatal("forkQuery Fatal error occurred on " + server,ex);                    
                     Node node = getNode(server);
@@ -286,7 +289,7 @@ public abstract class DataStore {
         return bean.getThreadCount();
     }
 
-    public void forkHashTables(EmbeddingStructure struct1, QueryRecord queryRec, String keyFieldName, Result result) {
+    public void forkHashTables(Embeddable struct1, QueryRecord queryRec, String keyFieldName, Result result) {
         final Configuration conf = this.getConfiguration();
         final int maxQueryRows = queryRec.getMaxQueryRows();
         final boolean performComparisons = queryRec.performComparisons(keyFieldName);
@@ -301,7 +304,7 @@ public abstract class DataStore {
 
         final Result result1 = result;
         final String keyFieldName1 = keyFieldName;
-        final EmbeddingStructure struct11 = struct1;
+        final Embeddable struct11 = struct1;
 
         for (int j = 0; j < key.L; j++) {
             final int hashTableNo = j;
@@ -310,6 +313,7 @@ public abstract class DataStore {
                     String hashKey = buildHashKey(hashTableNo, struct11, keyFieldName1);
                     if (keys.contains(hashKey)) {
                         ArrayList arr = (ArrayList) keys.get(hashKey);
+                    
                         for (int i = 0; i < arr.size(); i++) {
                             String id = (String) arr.get(i);
 
@@ -327,7 +331,7 @@ public abstract class DataStore {
                             }
                             result1.incPairsNo();
                             if ((performComparisons) && (!result1.getMap(keyFieldName1).containsKey(id))) {
-                                EmbeddingStructure struct2 = (EmbeddingStructure) data.get(id);
+                                Embeddable struct2 = (Embeddable) data.get(id);
                                 key.thresholdRatio = userPercentageThreshold;
                                 if (distance(struct11, struct2, key)) {
                                     result1.add(keyFieldName1, dataRec);
@@ -370,12 +374,13 @@ public abstract class DataStore {
 
     }
 
-    public void setHashKeys(String id, EmbeddingStructure emb, String keyFieldName) {
+    public void setHashKeys(String id, Embeddable emb, String keyFieldName) {
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
         StoreEngine hashKeys = keys;
         if (isKeyed) {
             hashKeys = this.getKeyMap(keyFieldName);
+            log.debug("Should select the "+keyFieldName);
         }
 
         Key key = this.getConfiguration().getKey(keyFieldName);
@@ -397,7 +402,7 @@ public abstract class DataStore {
 
     public void insert(Record rec) {
         if (this.getConfiguration().isPrivateMode()) {
-            EmbeddingStructure emb = (EmbeddingStructure) rec.get(Record.PRIVATE_STRUCTURE);
+            Embeddable emb = (Embeddable) rec.get(Record.PRIVATE_STRUCTURE);
             data.set(rec.getId(), emb);
             setHashKeys(rec.getId(), emb, Configuration.RECORD_LEVEL);
             return;
@@ -405,22 +410,22 @@ public abstract class DataStore {
 
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
-        HashMap<String, ? extends EmbeddingStructure[]> embMap = buildEmbeddingStructureMap(rec);
+        HashMap<String, ? extends Embeddable[]> embMap = buildEmbeddableMap(rec);
 
         if (isKeyed) {
             for (int i = 0; i < keyFieldNames.length; i++) {
                 String keyFieldName = keyFieldNames[i];
-                EmbeddingStructure[] embs = embMap.get(keyFieldName);
+                Embeddable[] embs = embMap.get(keyFieldName);
                 for (int j = 0; j < embs.length; j++) {
-                    EmbeddingStructure emb = embs[j];
+                    Embeddable emb = embs[j];
                     setHashKeys(rec.getId() + Key.KEYFIELD + j, emb, keyFieldName);
                     this.getDataMap(keyFieldName).set(rec.getId() + Key.KEYFIELD + j, emb);
                 }
 
             }
         } else {
-            data.set(rec.getId(), ((EmbeddingStructure[]) embMap.get(Configuration.RECORD_LEVEL))[0]);
-            setHashKeys(rec.getId(), ((EmbeddingStructure[]) embMap.get(Configuration.RECORD_LEVEL))[0], Configuration.RECORD_LEVEL);
+            data.set(rec.getId(), ((Embeddable[]) embMap.get(Configuration.RECORD_LEVEL))[0]);
+            setHashKeys(rec.getId(), ((Embeddable[]) embMap.get(Configuration.RECORD_LEVEL))[0], Configuration.RECORD_LEVEL);
         }
 
         records.set(rec.getId(), rec);
@@ -431,9 +436,9 @@ public abstract class DataStore {
         Configuration conf = this.getConfiguration();
         StoreEngine hashKeys = keys;
         StoreEngine dataKeys = data;
-        HashMap<String, ? extends EmbeddingStructure[]> embMap = null;
+        HashMap<String, ? extends Embeddable[]> embMap = null;
         if (!conf.isPrivateMode()) {
-            embMap = buildEmbeddingStructureMap(queryRecord);
+            embMap = buildEmbeddableMap(queryRecord);
         }
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
@@ -452,7 +457,7 @@ public abstract class DataStore {
                 for (int j = 0; j < keyFieldNames.length; j++) {
                     String keyFieldName = keyFieldNames[j];
                     if (keyFieldName.equals(fieldName)) {
-                        EmbeddingStructure[] structArr = embMap.get(fieldName);
+                        Embeddable[] structArr = embMap.get(fieldName);
                         for (int k = 0; k < structArr.length; k++) {
                             forkHashTables(structArr[k], queryRecord, keyFieldName, result);
 
@@ -464,67 +469,83 @@ public abstract class DataStore {
         }
 
         if (!isKeyed) {
-            EmbeddingStructure emb = null;
+            Embeddable emb = null;
             if (conf.isPrivateMode()) {
-                emb = (EmbeddingStructure) queryRecord.get(Record.PRIVATE_STRUCTURE);
+                emb = (Embeddable) queryRecord.get(Record.PRIVATE_STRUCTURE);
             } else {
-                emb = ((EmbeddingStructure[]) embMap.get(Configuration.RECORD_LEVEL))[0];
+                emb = ((Embeddable[]) embMap.get(Configuration.RECORD_LEVEL))[0];
             }
             forkHashTables(emb, queryRecord, Configuration.RECORD_LEVEL, result);
         }
 
         return result;
     }
+    
 
-    public HashMap<String, BloomFilter[]> toBloomFilter(Record rec) {
-        HashMap<String, BloomFilter[]> bfMap = new HashMap<String, BloomFilter[]>();
+    public HashMap<String, Embeddable[]> buildEmbeddableMap(Record rec) {        
+        
+        HashMap<String, Embeddable[]> embMap = new HashMap<String, Embeddable[]>();
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
-        ArrayList<String> fieldNames = rec.getFieldNames();
-        BloomFilter bf = new BloomFilter("", 1000, 10, 2, true);
-
+        ArrayList<String> fieldNames = rec.getFieldNames();        
+        Embeddable embRec=null;
+        if ((!isKeyed) && (this.getConfiguration().getKey(Configuration.RECORD_LEVEL)!=null)){ 
+            Embeddable embRecInitial =  this.getConfiguration().getKey(Configuration.RECORD_LEVEL).getEmbeddable();
+            embRec = embRecInitial.freshCopy();
+        }
+        
         for (int i = 0; i < fieldNames.size(); i++) {
             String fieldName = fieldNames.get(i);
             boolean isNotIndexedField = rec.isNotIndexedField(fieldName);
             String s = (String) rec.get(fieldName);
-            if (this.getConfiguration().isKeyed) {
+            if (isKeyed) {
                 for (int j = 0; j < keyFieldNames.length; j++) {
                     String keyFieldName = keyFieldNames[j];
                     if (keyFieldName.equals(fieldName)) {
                         Key key = this.getConfiguration().getKey(keyFieldName);
-                        boolean isTokenized = key.isTokenized();
+                        Embeddable emb = key.getEmbeddable();
+                        boolean isTokenized = key.isTokenized();                        
                         if (!isTokenized) {
-                            bfMap.put(keyFieldName, new BloomFilter[]{new BloomFilter(s, key.size, 15, 2, true)});
+                            Embeddable embKey = emb.freshCopy();                            
+                            embKey.embed(s);
+                            embMap.put(keyFieldName, new Embeddable[]{embKey});
                         } else {
-                            String[] os = (String[]) rec.get(keyFieldName + Key.TOKENS);
-                            BloomFilter[] bfs = new BloomFilter[os.length];
+                            String[] keyValues = (String[]) rec.get(keyFieldName + Key.TOKENS);
+                            Embeddable[] bfs = new Embeddable[keyValues.length];
                             for (int k = 0; k < bfs.length; k++) {
-                                String v = os[k];
-                                bfs[k] = new BloomFilter(v, key.size, 15, 2, true);
+                                String v = keyValues[k];
+                                Embeddable embKey = emb.freshCopy();
+                                log.debug(((BloomFilter)embKey).getBitSet());
+                                embKey.embed(v);                            
+                                log.debug(((BloomFilter)embKey).getBitSet());                                
+                                //Embeddable embKey = new BloomFilter(v,700,15,2);                                
+                                bfs[k] = embKey;
                             }
-                            bfMap.put(keyFieldName, bfs);
+                            embMap.put(keyFieldName, bfs);
                         }
                     }
                 }
             } else if (!isNotIndexedField) {
-                bf.encode(s, true);
+               if (embRec!=null)                           
+                  embRec.embed(s);
+               else
+                 log.error("Although no key fields are specified, a record-level embeddable is missing.");
             }
         }
         if (!isKeyed) {
-            bfMap.put(Configuration.RECORD_LEVEL, new BloomFilter[]{bf});
+            embMap.put(Configuration.RECORD_LEVEL, new Embeddable[]{embRec});
         }
 
-        return bfMap;
+        return embMap;
     }
 
     
     
-    public abstract String buildHashKey(int j, EmbeddingStructure struct, String keyFieldName);
+    public abstract String buildHashKey(int j, Embeddable struct, String keyFieldName);
 
-    public abstract boolean distance(EmbeddingStructure struct1, EmbeddingStructure struct2, Key key);
+    public abstract boolean distance(Embeddable struct1, Embeddable struct2, Key key);
 
-    public abstract HashMap<String, ? extends EmbeddingStructure[]> buildEmbeddingStructureMap(Record rec);
-
+    
     
     public abstract Configuration getConfiguration();
 

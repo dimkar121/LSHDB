@@ -22,21 +22,22 @@ public class MinHashKey extends Key{
     
     
     
-    public MinHashKey(String keyFieldName, int k, double delta, double t, int size, boolean tokenized, boolean performComparisons){
+    public MinHashKey(String keyFieldName, int k, double delta, double t, boolean tokenized, boolean performComparisons, Embeddable emb){
         this.keyFieldName = keyFieldName;
         this.k = k;
         this.delta = delta;    
         this.t = t;
-        this.size = size;
+        this.size = emb.getSize();
         optimizeL();  
         this.tokenized = tokenized;
         this.permutationsNo = this.L * this.k;
         this.permutations = new int[this.L][this.k][this.size];
         initPermutations(); 
+        setEmbeddable(emb);
     }
     
     public MinHashKey(String keyFieldName){
-        this(keyFieldName,5,.1,.60,500,true,true);
+        this(keyFieldName,5,.1,.60,true,true, new BloomFilter(700,15,2));
     }
     
     public void optimizeL(){
