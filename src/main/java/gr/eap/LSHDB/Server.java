@@ -9,15 +9,18 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author dimkar
  */
 public class Server {
-
+    final static Logger log = Logger.getLogger(Server.class);
+    
     private ServerSocket serverSocket = null;
     private Socket socket = null;
     private String alias = null;
@@ -31,18 +34,23 @@ public class Server {
     public Server(String configDir) {
 
         boolean queryRemoteNodes = true;
-        Config config = new Config(configDir + "config.xml");
-        alias = config.get("alias");
-        port = Integer.parseInt(config.get("port"));
-        String[] dbNames = config.getList("name");
-        String[] folders = config.getList("folder");
-        String[] dbEngines = config.getList("engine");
-        String[] LSHStores = config.getList("LSHStore");
-        String[] LSHConf = config.getList("LSHConfiguration");
-        String[] remoteAliases = config.get(0, "remote_nodes", "alias");
-        String[] remoteNodeUrls = config.get(0, "remote_nodes", "url");
-        String[] ports = config.get(0, "remote_nodes", "port");
-        String[] enableds = config.get(0, "remote_nodes", "enabled");
+        Config config = new Config(configDir + Config.CONFIG_FILE);
+        alias = config.get(Config.CONFIG_ALIAS);
+        try{
+          port = Integer.parseInt(config.get(Config.CONFIG_PORT));
+        }catch(NumberFormatException ex){
+            log.error("Invalid port number specified="+port,ex);
+            port = 4443;
+        }  
+        String[] dbNames = config.getList(Config.CONFIG_STORE_NAME);
+        String[] targets = config.getList(Config.CONFIG_TARGET);
+        String[] dbEngines = config.getList(Config.CONFIG_NOSQL_ENGINE);
+        String[] LSHStores = config.getList(Config.CONFIG_LSH);
+        String[] LSHConf = config.getList(Config.CONFIG_CONFIGURATION);
+        String[] remoteAliases = config.get(0, Config.CONFIG_REMOTE_NODES, Config.CONFIG_ALIAS);
+        String[] remoteNodeUrls = config.get(0, Config.CONFIG_REMOTE_NODES, Config.CONFIG_URL);
+        String[] ports = config.get(0, Config.CONFIG_REMOTE_NODES, Config.CONFIG_PORT);
+        String[] enableds = config.get(0, Config.CONFIG_REMOTE_NODES, Config.CONFIG_ENABLED);
 
         HashMap<String, ArrayList<String>> aliasMap = new HashMap<String, ArrayList<String>>();
         if (remoteAliases != null) {
@@ -58,9 +66,9 @@ public class Server {
         hc = new Configuration[dbNames.length];
         lsh = new DataStore[dbNames.length];
         for (int i = 0; i < dbNames.length; i++) {
-            hc[i] = LSHStoreFactory.build(folders[i], dbNames[i], LSHConf[i], dbEngines[i], false);
-            lsh[i] = LSHStoreFactory.build(folders[i], dbNames[i], LSHStores[i], dbEngines[i], hc[i], false);
-            String[] remoteStores = config.get(i, "store", "alias");
+            hc[i] = LSHStoreFactory.build(targets[i], dbNames[i], LSHConf[i], dbEngines[i], false);
+            lsh[i] = LSHStoreFactory.build(targets[i], dbNames[i], LSHStores[i], dbEngines[i], hc[i], false);
+            String[] remoteStores = config.get(i, Config.CONFIG_STORE, Config.CONFIG_ALIAS);
             lsh[i].setQueryMode(true);
             for (int a = 0; a < remoteStores.length; a++) {
                 String alias = remoteStores[a];
@@ -70,15 +78,15 @@ public class Server {
                     int port = Integer.parseInt(confs.get(1));
                     boolean enabled = Boolean.parseBoolean(confs.get(2));
                     lsh[i].addNode(new Node(alias, url, port, enabled));
-                    System.out.println("Registering remote node " + alias + " at " + url + " for " + dbNames[i]);
+                    log.info("Registering remote node " + alias + " at " + url + " for " + dbNames[i]);
                 }
             }
             Node localNode = new Node(this.alias, "", port, true);
             localNode.setLocal();
             lsh[i].addNode(localNode);
-            System.out.println("Supporting " + dbNames[i] + " which uses " + LSHStores[i] + " and is materialized by " + dbEngines[i]);
-
+            log.info("Supporting " + dbNames[i] + " which uses " + LSHStores[i] + " and is materialized by " + dbEngines[i]);
         }
+        log.info("LSHDB instance started at "+LocalDateTime.now());
 
     }
 
@@ -88,21 +96,21 @@ public class Server {
 
     public void communicate() {
         try {
-            serverSocket = new ServerSocket(port, 1000);
+            serverSocket = new ServerSocket(port, 100);
 
             while (true) {
                 c++;
-                Server_Thread thread1 = new Server_Thread("t-" + c, serverSocket.accept(), lsh);
-                thread1.run();
+                Worker worker = new Worker("t-" + c, serverSocket.accept(), lsh);
+                worker.run();
             }
 
-        } catch (SocketException se) {
-            se.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
+        } catch (SocketException ex) {
+            log.error("Waiting for connections: Socket error", ex);
+            
+        } catch (IOException ex) {
+            log.error("Waiting for connections: IO error", ex);
+            
+        } 
 
     }
 

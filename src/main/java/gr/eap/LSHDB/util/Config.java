@@ -20,6 +20,19 @@ import org.w3c.dom.Node;
  */
 public class Config {
 
+    public final static String CONFIG_FILE = "config.xml";
+    public final static String CONFIG_ALIAS = "alias";
+    public final static String CONFIG_PORT = "port";
+    public final static String CONFIG_STORE_NAME = "name";
+    public final static String CONFIG_STORE = "store";    
+    public final static String CONFIG_TARGET = "target";
+    public final static String CONFIG_NOSQL_ENGINE = "engine";
+    public final static String CONFIG_LSH = "LSHStore";
+    public final static String CONFIG_CONFIGURATION = "LSHConfiguration";
+    public final static String CONFIG_REMOTE_NODES = "remote_nodes";
+    public final static String CONFIG_URL = "url";
+    public final static String CONFIG_ENABLED = "enabled";
+
     Document document;
 
     public Config(String fileName) {

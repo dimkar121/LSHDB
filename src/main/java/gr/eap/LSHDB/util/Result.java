@@ -27,7 +27,7 @@ public class Result implements Serializable {
     public final static int NO_QUERY_VALUES_SPECIFIED = 2;
     public final static int NO_KEYED_FIELDS_SPECIFIED = 3;
     public final static int NULL_RESULT_RETURNED = 4;
-     public final static int NO_CONNECT = 4;
+     public final static int NO_CONNECT = 5;
 
     public final static String STORE_NOT_FOUND_ERROR_MSG = "The specified store does not exist.";
     public final static String NO_QUERY_VALUES_SPECIFIED_ERROR_MSG = "No query values specified.";

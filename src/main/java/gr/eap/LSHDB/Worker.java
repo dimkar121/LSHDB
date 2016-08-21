@@ -20,17 +20,22 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
+import org.apache.log4j.Logger;
 
-public class Server_Thread extends Thread {
+public class Worker extends Thread {
+final static Logger log = Logger.getLogger(Worker.class);
 
     private Socket socket = null;
     private QueryRecord query;
     private DataStore[] lsh;
     private Result result;
+    private String name;
 
-    public Server_Thread(String name, Socket socket, DataStore[] lsh) {
+    public Worker(String name, Socket socket, DataStore[] lsh) {
         this.socket = socket;
-        System.out.println("Connection from: " + this.socket.getInetAddress().getHostAddress());
+        this.name = name;
+        String msg = "Query "+ name +" initiated by: " + this.socket.getInetAddress().getHostAddress();
+        log.info(msg);
         this.lsh = lsh;
     }
 
@@ -88,7 +93,8 @@ public class Server_Thread extends Thread {
                 long elapsedTimeInd = tEndInd - tStartInd;
                 double secondsInd = elapsedTimeInd / 1.0E09;
                 result.setTime(secondsInd);
-                System.out.println("Query completed in " + secondsInd + " secs.");
+                String msg = "Query "+ this.name +" completed in " + secondsInd + " secs.";
+                log.info(msg);
                 result.prepare();
             }
 
@@ -183,7 +189,6 @@ public class Server_Thread extends Thread {
 
                                     if (db.getConfiguration().isKeyed) {
                                         String value = (String) pair.getValue();
-                                        //System.out.println("name="+pair.getKey()+" value=" + value + ".");
                                         String[] values = value.split(" ");
 
                                         query.set(pair.getKey() + "", value, sim, true);
@@ -192,7 +197,6 @@ public class Server_Thread extends Thread {
                                         query.set(pair.getKey() + "", pair.getValue());
                                     }
 
-                                    //System.out.println(pair.getKey() + " = " + pair.getValue());
                                 }
                             } else {
                                 throw new JSONException(Result.NO_QUERY_VALUES_SPECIFIED, Result.NO_QUERY_VALUES_SPECIFIED_ERROR_MSG);
@@ -229,7 +233,7 @@ public class Server_Thread extends Thread {
             socket.close();
 
         } catch (IOException ex2) {
-            System.out.println(ex2.getMessage());
+            log.error("Streams ",ex2);
         }
     }
 }

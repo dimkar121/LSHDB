@@ -47,3 +47,4 @@ Temporary Items
 .apdisk
 **/gr/eap/LSHDB/priv/**
 /target/**
+/log/**

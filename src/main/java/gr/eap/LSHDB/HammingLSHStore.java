@@ -51,7 +51,7 @@ public class HammingLSHStore extends DataStore {
 
     
     @Override
-    public HashMap<String, BloomFilter[]> createKeyFieldEmbeddingStructureMap(Record rec){
+    public HashMap<String, BloomFilter[]> buildEmbeddingStructureMap(Record rec){
             return toBloomFilter(rec);
     }
     
@@ -106,6 +106,8 @@ public class HammingLSHStore extends DataStore {
         return d;
     }
 
+    
+    
     public ArrayList<Result> browse(int rowCount) {
         ArrayList<Result> results = new ArrayList<Result>();
 

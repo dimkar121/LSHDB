@@ -13,8 +13,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ConnectException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,13 +26,16 @@ import gr.eap.LSHDB.util.ListUtil;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.Arrays;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author dimkar
  */
 public abstract class DataStore {
-
+    final static Logger log = Logger.getLogger(DataStore.class);
+    
+    
     String folder;
     String dbName;
     String dbEngine;
@@ -257,21 +258,22 @@ public abstract class DataStore {
                 }
 
             }
-        } catch (ExecutionException ex) {
+        } catch (ExecutionException | InterruptedException ex) {
             if (ex.getCause() != null) {
-                System.out.println(ex.getCause().getMessage());
+                String server=" ";
+                if (partialResults!=null)
+                    server = partialResults.getOrigin();
+                log.error("forkQuery ereor ",ex);
                 if (ex.getCause() instanceof Error) {
-                    System.out.println("Fatal error occurred on " + partialResults.getOrigin());
-                    Node node = getNode(partialResults.getOrigin());
+                    log.fatal("forkQuery Fatal error occurred on " + server,ex);                    
+                    Node node = getNode(server);
                     if (node != null) {
                         node.disable();
                     }
                 }
 
             }
-        } catch (InterruptedException ex) {
-            System.out.println(ex.getMessage());
-        }
+        } 
 
         executorService.shutdown();
         return result;
@@ -295,7 +297,6 @@ public abstract class DataStore {
         boolean isPrivateMode = conf.isPrivateMode();
 
         ExecutorService executorService = Executors.newFixedThreadPool(key.L);
-        //System.out.println("Active threads=" + getThreadsNo());
         List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
 
         final Result result1 = result;
@@ -355,8 +356,6 @@ public abstract class DataStore {
 
                 if (future != null) {
                     Result partialResults = future.get();
-                    //if (k == 0) 
-                    //  System.out.println("pairsNo=" + partialResults.getPairsNo());
 
                     k++;
                     if (partialResults != null) {
@@ -364,13 +363,9 @@ public abstract class DataStore {
                     }
                 }
             }
-        } catch (ExecutionException ex) {
-            System.out.println("......................Cannot create threads");
-            System.out.println(ex.getMessage());
-        } catch (InterruptedException ex) {
-            System.out.println("......................Cannot create threads");
-            System.out.println(ex.getMessage());
-        }
+        } catch (ExecutionException | InterruptedException ex) {
+            log.error("forkHashTables ",ex);
+        } 
         executorService.shutdown();
 
     }
@@ -410,7 +405,7 @@ public abstract class DataStore {
 
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
-        HashMap<String, ? extends EmbeddingStructure[]> embMap = createKeyFieldEmbeddingStructureMap(rec);
+        HashMap<String, ? extends EmbeddingStructure[]> embMap = buildEmbeddingStructureMap(rec);
 
         if (isKeyed) {
             for (int i = 0; i < keyFieldNames.length; i++) {
@@ -439,7 +434,7 @@ public abstract class DataStore {
         StoreEngine dataKeys = data;
         HashMap<String, ? extends EmbeddingStructure[]> embMap = null;
         if (!conf.isPrivateMode()) {
-            embMap = createKeyFieldEmbeddingStructureMap(queryRecord);
+            embMap = buildEmbeddingStructureMap(queryRecord);
         }
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
@@ -523,12 +518,15 @@ public abstract class DataStore {
         return bfMap;
     }
 
+    
+    
     public abstract String buildHashKey(int j, EmbeddingStructure struct, String keyFieldName);
 
     public abstract boolean distance(EmbeddingStructure struct1, EmbeddingStructure struct2, Key key);
 
-    public abstract HashMap<String, ? extends EmbeddingStructure[]> createKeyFieldEmbeddingStructureMap(Record rec);
+    public abstract HashMap<String, ? extends EmbeddingStructure[]> buildEmbeddingStructureMap(Record rec);
 
+    
     public abstract Configuration getConfiguration();
 
 }

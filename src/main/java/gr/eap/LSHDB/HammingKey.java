@@ -39,11 +39,11 @@ public class HammingKey  extends Key{
     }
     
     public void optimizeL() {
-        L = (int) Math.ceil(Math.log(delta) / Math.log(1 - Math.pow((1.0 - (t * 1.0 / size)), k)));
+        L = (int) Math.ceil(Math.log(delta) / Math.log(1 - Math.pow((1.0 - (t * 1.0 / this.size)), k)));
     }
     
     public int getLc() {
-        double p = 1 - (t * 1.0) / (size * 1.0);
+        double p = 1 - (t * 1.0) / (this.size * 1.0);
         p = Math.pow(p, k);
         double exp = (L * p);
         double std = Math.sqrt(exp * (1 - p));

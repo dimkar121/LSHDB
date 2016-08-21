@@ -99,7 +99,7 @@ public class MinHashLSHStore extends DataStore {
     }
 
     @Override
-    public HashMap<String, BloomFilter[]> createKeyFieldEmbeddingStructureMap(Record rec){
+    public HashMap<String, BloomFilter[]> buildEmbeddingStructureMap(Record rec){
             return toBloomFilter(rec);
     }
     
