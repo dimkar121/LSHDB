@@ -1,9 +1,9 @@
 ![LSHDB](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Sierpinski_deep.svg/128px-Sierpinski_deep.svg.png)
 
-
 # LSHDB 
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/gr.eap.LSHDB/LSHDB/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22gr.eap.LSHDB%22)
+[![License](http://img.shields.io/:license-apache-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
 
 LSHDB is a parallel and distributed data engine, which relies on the [locality-sensitive hashing](https://en.wikipedia.org/wiki/Locality-sensitive_hashing) (LSH) technique and noSQL systems, 
@@ -106,7 +106,7 @@ In case one needs to run LSHDB as a server instance, then, should provide the fo
    <stores>
      <store>
        <name>dblp</name>  
-       <folder>/home/LSHDB/stores</folder>
+       <target>/home/LSHDB/stores</target>
        <engine>gr.eap.LSHDB.MapDB</engine>
        <LSHStore>gr.eap.LSHDB.HammingLSHStore</LSHStore>
        <LSHConfiguration>gr.eap.LSHDB.HammingConfiguration</LSHConfiguration>    
