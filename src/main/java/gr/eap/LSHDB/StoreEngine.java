@@ -16,10 +16,7 @@ public interface StoreEngine {
      
      public void set(String key, Object data);
      public Object get(String key);
-     public boolean contains(String key);
-     public abstract ArrayList<Record> browse(int rowCount, int pageNo, String key);
-     public abstract ArrayList<Record> browseBack(int rowCount, int pageNo,String key);    
+     public boolean contains(String key);     
      public abstract long count();
      public void close();
-     public void persist();     
  }

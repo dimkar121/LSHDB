@@ -132,7 +132,7 @@ public abstract class DataStore {
         }
     }
 
-    public void persist() {
+   /* public void persist() {
         records.persist();
         if (this.getConfiguration().isKeyed()) {
             String[] keyFieldNames = this.getConfiguration().keyFieldNames;
@@ -147,7 +147,7 @@ public abstract class DataStore {
             data.persist();
             keys.persist();
         }
-    }
+    }*/
 
     public void close() {
 
@@ -380,7 +380,6 @@ public abstract class DataStore {
         StoreEngine hashKeys = keys;
         if (isKeyed) {
             hashKeys = this.getKeyMap(keyFieldName);
-            log.debug("Should select the "+keyFieldName);
         }
 
         Key key = this.getConfiguration().getKey(keyFieldName);
@@ -490,8 +489,7 @@ public abstract class DataStore {
         ArrayList<String> fieldNames = rec.getFieldNames();        
         Embeddable embRec=null;
         if ((!isKeyed) && (this.getConfiguration().getKey(Configuration.RECORD_LEVEL)!=null)){ 
-            Embeddable embRecInitial =  this.getConfiguration().getKey(Configuration.RECORD_LEVEL).getEmbeddable();
-            embRec = embRecInitial.freshCopy();
+             embRec =  this.getConfiguration().getKey(Configuration.RECORD_LEVEL).getEmbeddable().freshCopy();
         }
         
         for (int i = 0; i < fieldNames.size(); i++) {
@@ -503,23 +501,19 @@ public abstract class DataStore {
                     String keyFieldName = keyFieldNames[j];
                     if (keyFieldName.equals(fieldName)) {
                         Key key = this.getConfiguration().getKey(keyFieldName);
-                        Embeddable emb = key.getEmbeddable();
                         boolean isTokenized = key.isTokenized();                        
                         if (!isTokenized) {
-                            Embeddable embKey = emb.freshCopy();                            
-                            embKey.embed(s);
-                            embMap.put(keyFieldName, new Embeddable[]{embKey});
+                            Embeddable emb = key.getEmbeddable().freshCopy();                        
+                            emb.embed(s);
+                            embMap.put(keyFieldName, new Embeddable[]{emb});
                         } else {
                             String[] keyValues = (String[]) rec.get(keyFieldName + Key.TOKENS);
                             Embeddable[] bfs = new Embeddable[keyValues.length];
                             for (int k = 0; k < bfs.length; k++) {
                                 String v = keyValues[k];
-                                Embeddable embKey = emb.freshCopy();
-                                log.debug(((BloomFilter)embKey).getBitSet());
-                                embKey.embed(v);                            
-                                log.debug(((BloomFilter)embKey).getBitSet());                                
-                                //Embeddable embKey = new BloomFilter(v,700,15,2);                                
-                                bfs[k] = embKey;
+                                Embeddable emb = key.getEmbeddable().freshCopy();
+                                emb.embed(v);                            
+                                bfs[k] = emb;
                             }
                             embMap.put(keyFieldName, bfs);
                         }

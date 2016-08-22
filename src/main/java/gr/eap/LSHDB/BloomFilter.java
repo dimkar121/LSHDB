@@ -22,6 +22,7 @@ package gr.eap.LSHDB;
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+import gr.eap.LSHDB.Embeddable;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -60,12 +61,7 @@ public class BloomFilter implements Embeddable, Serializable, Cloneable{
     }
     
     public Embeddable freshCopy(){
-        try{
-           return (BloomFilter) this.clone();
-        }catch(CloneNotSupportedException ex){
-            log.error("Error in cloning a BloomFilter.",ex);
-        } 
-      return null;  
+        return new BloomFilter(this.bitSetSize,this.k,this.grams);
     }
     
     public BloomFilter(String s, int length, int k, int grams) {

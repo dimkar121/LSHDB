@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.apache.log4j.Logger;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
@@ -25,7 +26,8 @@ import org.mapdb.volume.Volume;
  * @author dimkar
  */
 public class MapDB implements StoreEngine {
-
+final static Logger log = Logger.getLogger(MapDB.class);
+    
     public String pathToDB;
     public DB db;
     public DB mem;
@@ -37,68 +39,22 @@ public class MapDB implements StoreEngine {
     double prop = .1;
     String fileName;
 
-    @Override
-    public ArrayList<Record> browse(int rowCount, int pageNo, String key) {
-        ArrayList<Record> recs = new ArrayList<Record>();
-        /*Pageable p = new Pageable(Collections.list(Collections.enumeration(mapDisk.keySet())));
-         p.setPageSize(rowCount);
-        p.setPage(pageNo);
-        List<String> l = p.getListForPage();
-        for (int i = 0; i < l.size(); i++) {
-            String keyl = l.get(i);            
-            Object data = this.get(keyl);
-            Record r = new Record();
-            r.setId(keyl);
-            r.set(keyl, data);
-            recs.add(r);
-        }*/
-        return recs;
-    }
-
-    @Override
-    public ArrayList<Record> browseBack(int rowCount, int pageNo, String key) {
-        return browse(rowCount, pageNo, key);
-
-    }
+ 
 
     
 
-    public void persist() {
-        OutputStream out;        
-        System.out.println("persisiting...");
-        try {
-            out = new FileOutputStream(new File(fileName),true);
-            fileVolume.copyTo(out);
-            //fileVolume.close();
-            //fileVolume = MappedFileVol.FACTORY.makeVolume(fileName, true);    
-            out.flush();
-            out.close();
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
+    
+
+   
 
     public MapDB(String folder, String dbName, String entity, boolean massInsertMode) {
-        try {
             pathToDB = folder + System.getProperty("file.separator") + dbName;
             File theDir = new File(pathToDB);
             if (!theDir.exists()) {
-                System.out.println("Path to the store "+pathToDB+" not found. A new store will be created.");
+                log.info("Path to the store "+pathToDB+" not found. A new store will be created.");
                 theDir.mkdir();
             }
             fileName = pathToDB + System.getProperty("file.separator") + entity;
-            //System.out.println(wholeFileName);
-
-            //outputStream = new FileOutputStream(wholeFileName+"LL");
-            //File f = File.createTempFile(wholeFileName, null);
-            //memVolume = MappedFileVol.FACTORY.makeVolume(wholeFileName, false);
-            //memVolume.fileLoad();
-            //System.out.println(memVolume.getFile().getAbsolutePath());
-            //load(wholeFileName);            
-            //boolean contentAlreadyExists =  new File(wholeFileName).exists();
-            //db = DBMaker.volumeDB(memVolume, contentAlreadyExists).closeOnJvmShutdown().make();
-            //db = DBMaker.fileDB(wholeFileName).checksumHeaderBypass().closeOnJvmShutdown().make();
             if (massInsertMode) {
                 db = DBMaker.fileDB(fileName).fileMmapEnableIfSupported().fileMmapPreclearDisable().cleanerHackEnable().checksumHeaderBypass().closeOnJvmShutdown().make();
                 mem = DBMaker.memoryDB().make();
@@ -106,45 +62,12 @@ public class MapDB implements StoreEngine {
             } else {
                  db = DBMaker.fileDB(fileName).fileMmapEnableIfSupported().fileMmapPreclearDisable().cleanerHackEnable().checksumHeaderBypass().closeOnJvmShutdown().make();
                  mem = DBMaker.memoryDB().make();
-                //MappedFileVol fileVolume = (MappedFileVol) MappedFileVol.FACTORY.makeVolume(fileName,true);
-                //fileVolume.fileLoad();
-                
-                //boolean contentAlreadyExists = new File(fileName).exists();
-                //Volume fileVolume = MappedFileVol.FACTORY.makeVolume(fileName,contentAlreadyExists);
-                //memVolume = new ByteArrayVol();                
-                //fileVolume.copyTo(memVolume);
-                
-                //db = DBMaker.volumeDB(memVolume, contentAlreadyExists).checksumHeaderBypass().make();
-                //mapDisk = db.hashMap(entity).createOrOpen();
-                //db = DBMaker.fileDB(fileName).fileMmapEnableIfSupported().fileMmapPreclearDisable().cleanerHackEnable().checksumHeaderBypass().closeOnJvmShutdown().make();
-                //mem = DBMaker.memoryDB().make();
             }
-
              mapDisk = db.hashMap(entity).createOrOpen();
              map = mem.hashMap(entity).expireAfterGet(1, TimeUnit.SECONDS).expireExecutor(Executors.newScheduledThreadPool(2)).create();
-             
-            /* Set set = mapDisk.getKeys();
-            int size = set.size();
-            int limit =(int) Math.round(size*prop);
-            Iterator it = set.iterator();
-            for (int i=0;i<limit; i++){
-                 Object k =  it.next();
-                 Object o = mapDisk.get(k);
-                 map.put(k,o);
-            }*/
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
     }
 
     public void close() {
-        //OutputStream out = new ByteArrayOutputStream();
-        //memVolume.copyTo(outputStream);
-        // outputStream.close();
-
-        //memVolume.close();
-        //db.close();        
-        //save();
         map.close();
         mapDisk.close();
     }

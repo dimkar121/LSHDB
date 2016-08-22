@@ -129,7 +129,7 @@ public class BerkeleyDB implements StoreEngine {
         return false;
     }
 
-    @Override
+    
     public ArrayList<Record> browse(int rowCount, int pageNo, String key) {
         ArrayList<Record> recs = new ArrayList<Record>();
         Cursor cursor = null;
@@ -177,7 +177,7 @@ public class BerkeleyDB implements StoreEngine {
         return recs;
     }
 
-    @Override
+    
     public ArrayList<Record> browseBack(int rowCount, int pageNo,String key) {
         ArrayList<Record> recs = new ArrayList<Record>();
         Cursor cursor = null;
@@ -220,26 +220,5 @@ public class BerkeleyDB implements StoreEngine {
     
     
     
-    public static void main(String[] args) {
-        try {
-           // StoreEngine db = BuildDB.build("c:/tmp", "BerkeleyDB", "Entity");
-            // key
-            //db.set("key1" , "lalakis");
-            //System.out.println(db.get("key1"));
-
-            //db.close();
-            Stack q=new Stack();
-            q.add("third");
-            q.add("second");
-            q.add("first");
-            ArrayList<String> arr=new ArrayList<String>(q);
-            System.out.println(arr.get(0));
-            System.out.println(arr.get(1));
-            System.out.println(arr.get(2));
-            
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
 
 }
