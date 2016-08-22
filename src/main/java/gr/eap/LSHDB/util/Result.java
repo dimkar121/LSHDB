@@ -5,12 +5,12 @@
  */
 package gr.eap.LSHDB.util;
 
+import gr.eap.LSHDB.JSON;
 import gr.eap.LSHDB.Key;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -185,6 +185,11 @@ public class Result implements Serializable {
         }
     }
 
+    public String asJSON(){
+        JSON j = new JSON();
+        return j.prepare(this);
+    }
+    
     public Result(QueryRecord rec) {
         queryRecord = rec;
         ArrayList<String> fieldNames = queryRecord.getQueryFieldNames();

@@ -7,8 +7,8 @@ package gr.eap.LSHDB;
 
 import gr.eap.LSHDB.embeddables.BloomFilter;
 import gr.eap.LSHDB.util.Config;
+import gr.eap.LSHDB.util.StoreConfigurationParams;
 import java.util.BitSet;
-import org.w3c.dom.Element;
 
 /**
  *
@@ -38,14 +38,9 @@ public class HammingLSHStore extends DataStore {
     */
     public static HammingLSHStore open(String storeName) throws StoreInitException{
         Config conf = new Config(Config.CONFIG_FILE);
-        Element el = conf.get(Config.CONFIG_STORE, storeName);
-        if (el!=null){
-            String configuration = el.getElementsByTagName(Config.CONFIG_CONFIGURATION).item(0).getNodeValue();
-            String engine = el.getElementsByTagName(Config.CONFIG_NOSQL_ENGINE).item(0).getNodeValue();
-            String target = el.getElementsByTagName(Config.CONFIG_TARGET).item(0).getNodeValue();
-            log.info(engine+" "+target+" "+configuration);
-            //return new HammingLSHStore(target,storeName,engine,null,false);
-            
+        StoreConfigurationParams c = conf.get(Config.CONFIG_STORE, storeName);
+        if (c!=null){
+            return new HammingLSHStore(c.getTarget(),  storeName, c.getEngine());            
         }
         throw new StoreInitException("store "+storeName+" not initialized. Check config.xml ");
     }

@@ -60,6 +60,9 @@ public class JSON {
         this.request = request;
     }
 
+    public JSON(){
+    }
+    
     public String toJSON(Object o) {
         ObjectMapper mapper = new ObjectMapper();
         //Object to JSON in String

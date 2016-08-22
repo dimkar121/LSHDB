@@ -90,7 +90,7 @@ public abstract class Configuration implements Serializable {
 
             }
         } catch (ClassNotFoundException ex) {
-            throw new StoreInitException("Decalred class " + dbEngine + " not found.");
+            throw new StoreInitException("Declared class " + dbEngine + " not found.");
         } catch (NoSuchMethodException ex) {
             throw new StoreInitException("The particular constructor cannot be found in the decalred class " + dbEngine + ".");
         }

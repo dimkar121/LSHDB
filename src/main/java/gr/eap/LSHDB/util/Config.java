@@ -109,19 +109,22 @@ public class Config {
         return names;
     }
     
-    public Element get(String key, String value) {
+    public StoreConfigurationParams get(String key, String value) {
         NodeList nodes = document.getElementsByTagName(key);
+        StoreConfigurationParams c = new StoreConfigurationParams();
         for (int i = 0; i < nodes.getLength(); i++) {
             Element node =(Element) nodes.item(i);            
             Node nameNode = node.getElementsByTagName(Config.CONFIG_STORE_NAME).item(i);            
-            Node engineNode = node.getElementsByTagName(Config.CONFIG_NOSQL_ENGINE).item(i);            
-            Node configurationNode = node.getElementsByTagName(Config.CONFIG_CONFIGURATION).item(i);            
-            
-            log.info("."+nameNode.getTextContent()+"."+engineNode.getTextContent()+".");
-              
-            if (node.getTextContent().trim().equals(value)){
-                 return (Element) node;
-            }
+            if (nameNode.getTextContent().equals(value)){
+                Node targetNode = node.getElementsByTagName(Config.CONFIG_TARGET).item(i);                        
+                c.setTarget(targetNode.getTextContent());
+                Node engineNode = node.getElementsByTagName(Config.CONFIG_NOSQL_ENGINE).item(i);            
+                c.setEngine(engineNode.getTextContent());
+                Node configurationNode = node.getElementsByTagName(Config.CONFIG_CONFIGURATION).item(i);            
+                c.setConfiguration(configurationNode.getTextContent());
+                log.info(c.getEngine()+" "+c.getTarget()+" "+c.configuration);
+                return c;
+            }    
         }
         return null;
     }
