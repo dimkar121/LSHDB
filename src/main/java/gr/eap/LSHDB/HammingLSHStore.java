@@ -6,16 +6,9 @@
 package gr.eap.LSHDB;
 
 import gr.eap.LSHDB.embeddables.BloomFilter;
-import gr.eap.LSHDB.util.ListUtil;
-import gr.eap.LSHDB.util.QueryRecord;
-import gr.eap.LSHDB.util.Result;
-import gr.eap.LSHDB.util.Record;
-import java.util.ArrayList;
-import java.util.Arrays;
+import gr.eap.LSHDB.util.Config;
 import java.util.BitSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.concurrent.ExecutionException;
+import org.w3c.dom.Element;
 
 /**
  *
@@ -38,6 +31,25 @@ public class HammingLSHStore extends DataStore {
 
     }
 
+    /*
+    * Opens a HammingLSH store
+    * found in specified @target.
+    * @throws StoreInitExcoetion
+    */
+    public static HammingLSHStore open(String storeName) throws StoreInitException{
+        Config conf = new Config(Config.CONFIG_FILE);
+        Element el = conf.get(Config.CONFIG_STORE, storeName);
+        if (el!=null){
+            String configuration = el.getElementsByTagName(Config.CONFIG_CONFIGURATION).item(0).getNodeValue();
+            String engine = el.getElementsByTagName(Config.CONFIG_NOSQL_ENGINE).item(0).getNodeValue();
+            String target = el.getElementsByTagName(Config.CONFIG_TARGET).item(0).getNodeValue();
+            log.info(engine+" "+target+" "+configuration);
+            //return new HammingLSHStore(target,storeName,engine,null,false);
+            
+        }
+        throw new StoreInitException("store "+storeName+" not initialized. Check config.xml ");
+    }
+    
     public HammingLSHStore(String folder, String dbName, String dbEngine) throws StoreInitException {
         this.folder = folder;
         this.dbName = dbName;

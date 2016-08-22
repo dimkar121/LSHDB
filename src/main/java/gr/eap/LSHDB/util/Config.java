@@ -108,4 +108,23 @@ public class Config {
         }
         return names;
     }
+    
+    public Element get(String key, String value) {
+        NodeList nodes = document.getElementsByTagName(key);
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Element node =(Element) nodes.item(i);            
+            Node nameNode = node.getElementsByTagName(Config.CONFIG_STORE_NAME).item(i);            
+            Node engineNode = node.getElementsByTagName(Config.CONFIG_NOSQL_ENGINE).item(i);            
+            Node configurationNode = node.getElementsByTagName(Config.CONFIG_CONFIGURATION).item(i);            
+            
+            log.info("."+nameNode.getTextContent()+"."+engineNode.getTextContent()+".");
+              
+            if (node.getTextContent().trim().equals(value)){
+                 return (Element) node;
+            }
+        }
+        return null;
+    }
+    
+    
 }
