@@ -14,6 +14,8 @@ import java.util.ArrayList;
  */
 public interface StoreEngine {
      
+    
+    
      public void set(String key, Object data);
      public Object get(String key);
      public boolean contains(String key);     

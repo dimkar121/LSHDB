@@ -16,10 +16,10 @@ import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.Cursor;
 
 import com.sleepycat.je.DatabaseException;
+import gr.eap.LSHDB.util.FileUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Stack;
 
 /**
  *
@@ -66,7 +66,7 @@ public class BerkeleyDB implements StoreEngine {
         try {
             DatabaseEntry dbKey = new DatabaseEntry(key.getBytes("UTF-8"));
             //System.out.println(serialize(data));
-            DatabaseEntry dbData = new DatabaseEntry(DataStore.serialize(data));
+            DatabaseEntry dbData = new DatabaseEntry(FileUtil.serialize(data));
             if ((db.put(null, dbKey, dbData)
                     == OperationStatus.SUCCESS)) {
 
@@ -103,7 +103,7 @@ public class BerkeleyDB implements StoreEngine {
             //StringBinding.stringToEntry(key, dbKey);
             if ((db.get(null, dbKey, dbData, LockMode.DEFAULT)
                     == OperationStatus.SUCCESS)) {
-                return DataStore.deserialize(dbData.getData());
+                return FileUtil.deserialize(dbData.getData());
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -156,7 +156,7 @@ public class BerkeleyDB implements StoreEngine {
                 // type (such as a complex object) then this operation would look 
                 // considerably different.
                 String keyString = new String(foundKey.getData());
-                Object data = DataStore.deserialize(foundData.getData());
+                Object data = FileUtil.deserialize(foundData.getData());
                 Record r = new Record();
                 r.setId(keyString);
                 r.set(keyString, data);
@@ -192,7 +192,7 @@ public class BerkeleyDB implements StoreEngine {
             while (cursor.getPrev(foundKey, foundData, LockMode.DEFAULT)
                     == OperationStatus.SUCCESS) {
                 String keyString = new String(foundKey.getData());
-                Object data = DataStore.deserialize(foundData.getData());
+                Object data = FileUtil.deserialize(foundData.getData());
                 Record r = new Record();
                 r.setId(keyString);
                 r.set(keyString, data);

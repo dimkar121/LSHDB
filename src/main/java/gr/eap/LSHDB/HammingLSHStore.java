@@ -104,16 +104,9 @@ public class HammingLSHStore extends DataStore {
 
     
     
+      
     
-    
-    
-    public ArrayList<Result> browse(int rowCount) {
-        ArrayList<Result> results = new ArrayList<Result>();
-
-        return results;
-    }
-
-    
+     
     
     
     public void save() {

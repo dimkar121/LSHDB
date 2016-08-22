@@ -49,6 +49,10 @@ public abstract class DataStore {
     boolean queryRemoteNodes = false;
     boolean massInsertMode = false;
 
+    public final static String KEYS = "keys";
+    public final static String DATA = "data";
+    public final static String CONF = "conf";
+    public final static String RECORDS = "records";
     
     
     
@@ -93,7 +97,7 @@ public abstract class DataStore {
 
     public void setKeyMap(String fieldName, boolean massInsertMode) throws NoSuchMethodException, ClassNotFoundException {
         fieldName = fieldName.replaceAll(" ", "");
-        keyMap.put(fieldName, DataStoreFactory.build(folder, dbName, "keys_" + fieldName, dbEngine, massInsertMode));
+        keyMap.put(fieldName, DataStoreFactory.build(folder, dbName, KEYS+"_" + fieldName, dbEngine, massInsertMode));
     }
 
     public StoreEngine getDataMap(String fieldName) {
@@ -103,14 +107,31 @@ public abstract class DataStore {
 
     public void setDataMap(String fieldName, boolean massInsertMode) throws NoSuchMethodException, ClassNotFoundException {
         fieldName = fieldName.replaceAll(" ", "");
-        dataMap.put(fieldName, DataStoreFactory.build(folder, dbName, "data_" + fieldName, dbEngine, massInsertMode));
+        dataMap.put(fieldName, DataStoreFactory.build(folder, dbName, DATA+"_" + fieldName, dbEngine, massInsertMode));
     }
 
+    /*
+    public DataStore(StoreEngine db){
+        if ((this.getConfiguration() != null) && (this.getConfiguration().isKeyed())) {
+                String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
+                for (int j = 0; j < keyFieldNames.length; j++) {
+                    String keyFieldName = keyFieldNames[j];
+                    
+                }
+            } else {
+                keys = 
+                data = 
+                keyMap.put(Configuration.RECORD_LEVEL, keys);
+                dataMap.put(Configuration.RECORD_LEVEL, data);
+
+            }
+    }*/
+    
     public void init(String dbEngine, boolean massInsertMode) throws StoreInitException {
         try {
             this.dbEngine = dbEngine;
             pathToDB = folder + System.getProperty("file.separator") + dbName;
-            records = DataStoreFactory.build(folder, dbName, "records", dbEngine, massInsertMode);
+            records = DataStoreFactory.build(folder, dbName,  RECORDS, dbEngine, massInsertMode);
             if ((this.getConfiguration() != null) && (this.getConfiguration().isKeyed())) {
                 String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
                 for (int j = 0; j < keyFieldNames.length; j++) {
@@ -119,36 +140,22 @@ public abstract class DataStore {
                     setDataMap(keyFieldName, massInsertMode);
                 }
             } else {
-                keys = DataStoreFactory.build(folder, dbName, "keys", dbEngine, massInsertMode);
-                data = DataStoreFactory.build(folder, dbName, "data", dbEngine, massInsertMode);
-                keyMap.put("recordLevel", keys);
-                dataMap.put("recordLevel", data);
+                keys = DataStoreFactory.build(folder, dbName, KEYS, dbEngine, massInsertMode);
+                data = DataStoreFactory.build(folder, dbName, DATA, dbEngine, massInsertMode);
+                keyMap.put(Configuration.RECORD_LEVEL, keys);
+                dataMap.put(Configuration.RECORD_LEVEL, data);
 
             }
         } catch (ClassNotFoundException ex) {
-            throw new StoreInitException("Decalred class " + dbEngine + " not found.");
+            throw new StoreInitException("Declared class " + dbEngine + " not found.");
         } catch (NoSuchMethodException ex) {
             throw new StoreInitException("The particular constructor cannot be found in the decalred class " + dbEngine + ".");
         }
     }
 
-   /* public void persist() {
-        records.persist();
-        if (this.getConfiguration().isKeyed()) {
-            String[] keyFieldNames = this.getConfiguration().keyFieldNames;
-            for (int j = 0; j < keyFieldNames.length; j++) {
-                String indexFieldName = keyFieldNames[j];
-                StoreEngine dataFactory = getKeyMap(indexFieldName);
-                dataFactory.persist();
-                dataFactory = getDataMap(indexFieldName);
-                dataFactory.persist();
-            }
-        } else {
-            data.persist();
-            keys.persist();
-        }
-    }*/
-
+    
+    
+  
     public void close() {
 
         records.close();
@@ -167,21 +174,7 @@ public abstract class DataStore {
         }
     }
 
-    public static byte[] serialize(Object obj) throws IOException {
-        try (ByteArrayOutputStream b = new ByteArrayOutputStream()) {
-            try (ObjectOutputStream o = new ObjectOutputStream(b)) {
-                o.writeObject(obj);
-            }
-            return b.toByteArray();
-        }
-    }
-
-    public static Object deserialize(byte[] data) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream in = new ByteArrayInputStream(data);
-        ObjectInputStream is = new ObjectInputStream(in);
-        return is.readObject();
-    }
-
+   
     public String getDbName() {
         return this.dbName;
     }

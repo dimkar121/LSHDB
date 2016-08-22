@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentMap;
 public abstract class Configuration implements Serializable {
 
     public static final long serialVersionUID = 100L;
-    
+
     String folder;
     String dbName;
     StoreEngine db;
@@ -32,10 +32,10 @@ public abstract class Configuration implements Serializable {
 
     HashMap<String, Key> keys = new HashMap<String, Key>();
 
-    public StoreEngine getEngine(){
+    public StoreEngine getEngine() {
         return db;
     }
-    
+
     public String[] getKeyFieldNames() {
         return keyFieldNames;
     }
@@ -63,12 +63,13 @@ public abstract class Configuration implements Serializable {
     public void saveConfiguration() {
         close();
     }
-    public void close(){
+
+    public void close() {
         db.close();
     }
 
     public Configuration(String folder, String dbName, String dbEngine, boolean massInsertMode) throws StoreInitException {
-        try{
+        try {
             this.folder = folder;
             this.dbName = dbName;
             db = DataStoreFactory.build(folder, dbName, "conf", dbEngine, massInsertMode);
@@ -136,5 +137,21 @@ public abstract class Configuration implements Serializable {
             throw new StoreInitException("The particular constructor cannot be found in the decalred class " + dbEngine + ".");
         }
     }
-    
+
+    public Configuration(StoreEngine db, Key[] keysList) {
+        this.keyFieldNames = new String[keysList.length];
+        for (int i = 0; i < keysList.length; i++) {
+            this.keyFieldNames[i] = keysList[i].getKeyFieldName();
+            keys.put(keyFieldNames[i], keysList[i]);
+            db.set("conf_" + this.keyFieldNames[i], keysList[i]);
+            if (this.keyFieldNames[0].equals(Configuration.RECORD_LEVEL)) {
+                this.isKeyed = false;
+            } else {
+                this.isKeyed = true;
+            }
+        }
+        db.set(Configuration.KEY_MODE, this.isKeyed);
+        db.set(Configuration.KEY_NAMES, this.keyFieldNames);
+    }
+
 }

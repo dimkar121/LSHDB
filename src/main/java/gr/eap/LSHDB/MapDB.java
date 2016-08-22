@@ -41,7 +41,12 @@ final static Logger log = Logger.getLogger(MapDB.class);
 
  
 
-    
+    public MapDB(String entity){
+        db = DBMaker.memoryDB().make();                    
+        mem = DBMaker.memoryDB().make();            
+        map = mem.hashMap(entity).create();   
+        mapDisk = db.hashMap(entity).createOrOpen();
+    }
 
     
 
