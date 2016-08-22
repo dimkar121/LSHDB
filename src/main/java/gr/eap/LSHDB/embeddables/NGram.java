@@ -1,4 +1,4 @@
-package gr.eap.LSHDB;
+package gr.eap.LSHDB.embeddables;
 
 import java.util.List;
 import java.util.ArrayList;

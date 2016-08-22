@@ -5,6 +5,7 @@
  */
 package gr.eap.LSHDB;
 
+import gr.eap.LSHDB.embeddables.BloomFilter;
 import java.security.InvalidParameterException;
 import java.util.Random;
 import org.apache.commons.math3.distribution.BinomialDistribution;

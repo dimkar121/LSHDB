@@ -5,6 +5,7 @@
  */
 package gr.eap.LSHDB;
 
+import gr.eap.LSHDB.embeddables.BloomFilter;
 import java.util.Random;
 
 /**

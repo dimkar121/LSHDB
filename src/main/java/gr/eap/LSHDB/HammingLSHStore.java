@@ -5,6 +5,7 @@
  */
 package gr.eap.LSHDB;
 
+import gr.eap.LSHDB.embeddables.BloomFilter;
 import gr.eap.LSHDB.util.ListUtil;
 import gr.eap.LSHDB.util.QueryRecord;
 import gr.eap.LSHDB.util.Result;

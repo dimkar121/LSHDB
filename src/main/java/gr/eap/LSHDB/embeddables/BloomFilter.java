@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package gr.eap.LSHDB;
+package gr.eap.LSHDB.embeddables;
 
 /**
  *
@@ -22,6 +22,7 @@ package gr.eap.LSHDB;
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+import gr.eap.LSHDB.Embeddable;
 import gr.eap.LSHDB.Embeddable;
 import java.io.Serializable;
 import java.math.BigInteger;

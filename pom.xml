@@ -10,7 +10,7 @@
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>  
     </properties>
-    <description>LSHDB is a persistent data engine, which relies on Locality-Sensitive Hashing and noSQL stores, for performing record linkage (and privacy-preserving record linkage) and similarity search tasks.</description>
+    <description>LSHDB is a parallel and distributed data engine, which relies on Locality-Sensitive Hashing and noSQL stores, for performing record linkage (and privacy-preserving record linkage) and similarity search tasks.</description>
     <url>http://github.com/dimkar121/LSHDB</url>
 
     <licenses>
@@ -105,11 +105,6 @@
                    
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>**/gr/eap/LSHDB/priv/**</exclude>
-                    </excludes>
-                </configuration>
             </plugin>            
             
             
@@ -128,9 +123,6 @@
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>gr/LSHDB/priv/**</exclude>
-                                    </excludes>
                                 </filter>
                             </filters>
                             <transformers>
@@ -152,11 +144,6 @@
                         </goals>
                     </execution>                    
                 </executions>
-                <configuration>
-                    <excludes>
-                        <exclude>gr/eap/LSHDB/priv/**</exclude>
-                    </excludes>
-                </configuration>
             </plugin>
             
             <plugin>
@@ -164,7 +151,6 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <sourcepath>${project.basedir}/src/main/java</sourcepath>
-                    <excludePackageNames>gr.eap.LSHDB.priv</excludePackageNames>                 
                 </configuration>
                 <executions>
                     <execution>
