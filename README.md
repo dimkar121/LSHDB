@@ -37,6 +37,10 @@ String storeName = "dblp";
 String engine = "gr.eap.LSHDB.MapDB";
 HammingLSHStore lsh = new HammingLSHStore(folder, storeName, engine);
 ```
+or using the compact form (provided that the congiguration is given in a XML file -- see below):
+```java
+HammingLSHStore.open("dblp");
+```
 one opens a database named `dblp`, which is stored under `/home/LSHDB/stores`, and is created using `Hamming LSH` and `MapDB`[http://www.mapdb.org] as the underlying LSH implementation and noSQL engine, respectively.
 
 
@@ -77,6 +81,10 @@ Result result = lsh.query(query);
 result.prepare();  
 ArrayList<Record> arr = result.getRecords();
 ```
+A one-line code that both opens a data store and submits a query is as follows:
+```java
+HammingLSHStore.open(storeName).query(q).asList();
+ ```
 
 Using the above query for the records mentioned above, the results contain the following entries:
 
