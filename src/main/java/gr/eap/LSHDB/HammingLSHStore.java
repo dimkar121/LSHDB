@@ -31,19 +31,7 @@ public class HammingLSHStore extends DataStore {
 
     }
 
-    /*
-    * Opens a HammingLSH store
-    * found in specified @target.
-    * @throws StoreInitExcoetion
-    */
-    public static HammingLSHStore open(String storeName) throws StoreInitException{
-        Config conf = new Config(Config.CONFIG_FILE);
-        StoreConfigurationParams c = conf.get(Config.CONFIG_STORE, storeName);
-        if (c!=null){
-            return new HammingLSHStore(c.getTarget(),  storeName, c.getEngine());            
-        }
-        throw new StoreInitException("store "+storeName+" not initialized. Check config.xml ");
-    }
+   
     
     public HammingLSHStore(String folder, String dbName, String dbEngine) throws StoreInitException {
         this.folder = folder;

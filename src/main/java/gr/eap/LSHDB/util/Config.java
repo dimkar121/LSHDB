@@ -121,7 +121,11 @@ public class Config {
                 Node engineNode = node.getElementsByTagName(Config.CONFIG_NOSQL_ENGINE).item(i);            
                 c.setEngine(engineNode.getTextContent());
                 Node configurationNode = node.getElementsByTagName(Config.CONFIG_CONFIGURATION).item(i);            
-                c.setConfiguration(configurationNode.getTextContent());
+                c.setConfiguration(configurationNode.getTextContent());                
+                Node LSHStoreNode = node.getElementsByTagName(Config.CONFIG_LSH).item(i);            
+                c.setLSHStore(LSHStoreNode.getTextContent());
+                
+                
                 log.info(c.getEngine()+" "+c.getTarget()+" "+c.configuration);
                 return c;
             }    

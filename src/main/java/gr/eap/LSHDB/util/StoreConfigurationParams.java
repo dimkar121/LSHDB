@@ -24,6 +24,11 @@ public class StoreConfigurationParams {
     String name;
     String engine;
     String configuration;
+    String LSHStore;
+    public String getLSHStore(){
+        return LSHStore;
+    }
+    
     public String getTarget(){
         return target;
     }
@@ -41,5 +46,8 @@ public class StoreConfigurationParams {
     }
     public void setConfiguration(String configuration){
         this.configuration = configuration;
+    }
+    public void setLSHStore(String LSHStore){
+        this.LSHStore = LSHStore;
     }
 }
