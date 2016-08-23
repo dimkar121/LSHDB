@@ -51,6 +51,11 @@ public abstract class DataStore {
     public final static String CONF = "conf";
     public final static String RECORDS = "records";
 
+    public final static int NO_FORKED_HASHTABLES = 4;
+
+    private ExecutorService hashTablesExecutor = Executors.newCachedThreadPool();
+    private ExecutorService nodesExecutor = Executors.newCachedThreadPool();
+
     public void setMassInsertMode(boolean status) {
         massInsertMode = status;
     }
@@ -92,7 +97,7 @@ public abstract class DataStore {
 
     public void setKeyMap(String fieldName, boolean massInsertMode) throws NoSuchMethodException, ClassNotFoundException {
         fieldName = fieldName.replaceAll(" ", "");
-        keyMap.put(fieldName, DataStoreFactory.build(folder, dbName, KEYS + "_" + fieldName, dbEngine, massInsertMode));
+        keyMap.put(fieldName, StoreEngineFactory.build(folder, dbName, KEYS + "_" + fieldName, dbEngine, massInsertMode));
     }
 
     public StoreEngine getDataMap(String fieldName) {
@@ -102,7 +107,7 @@ public abstract class DataStore {
 
     public void setDataMap(String fieldName, boolean massInsertMode) throws NoSuchMethodException, ClassNotFoundException {
         fieldName = fieldName.replaceAll(" ", "");
-        dataMap.put(fieldName, DataStoreFactory.build(folder, dbName, DATA + "_" + fieldName, dbEngine, massInsertMode));
+        dataMap.put(fieldName, StoreEngineFactory.build(folder, dbName, DATA + "_" + fieldName, dbEngine, massInsertMode));
     }
 
     /*
@@ -125,7 +130,7 @@ public abstract class DataStore {
         try {
             this.dbEngine = dbEngine;
             pathToDB = folder + System.getProperty("file.separator") + dbName;
-            records = DataStoreFactory.build(folder, dbName, RECORDS, dbEngine, massInsertMode);
+            records = StoreEngineFactory.build(folder, dbName, RECORDS, dbEngine, massInsertMode);
             if ((this.getConfiguration() != null) && (this.getConfiguration().isKeyed())) {
                 String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
                 for (int j = 0; j < keyFieldNames.length; j++) {
@@ -134,8 +139,8 @@ public abstract class DataStore {
                     setDataMap(keyFieldName, massInsertMode);
                 }
             } else {
-                keys = DataStoreFactory.build(folder, dbName, KEYS, dbEngine, massInsertMode);
-                data = DataStoreFactory.build(folder, dbName, DATA, dbEngine, massInsertMode);
+                keys = StoreEngineFactory.build(folder, dbName, KEYS, dbEngine, massInsertMode);
+                data = StoreEngineFactory.build(folder, dbName, DATA, dbEngine, massInsertMode);
                 keyMap.put(Configuration.RECORD_LEVEL, keys);
                 dataMap.put(Configuration.RECORD_LEVEL, data);
 
@@ -148,7 +153,8 @@ public abstract class DataStore {
     }
 
     public void close() {
-
+        hashTablesExecutor.shutdown();
+        nodesExecutor.shutdown();
         records.close();
         if (this.getConfiguration().isKeyed()) {
             String[] keyFieldNames = this.getConfiguration().keyFieldNames;
@@ -179,7 +185,6 @@ public abstract class DataStore {
             return result;
         }
         // should implment get Active Nodes
-        ExecutorService executorService = Executors.newFixedThreadPool(this.getNodes().size());
         List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
 
         final QueryRecord q = queryRecord;
@@ -232,7 +237,7 @@ public abstract class DataStore {
 
         Result partialResults = null;
         try {
-            List<Future<Result>> futures = executorService.invokeAll(callables);
+            List<Future<Result>> futures = nodesExecutor.invokeAll(callables);
 
             for (Future<Result> future : futures) {
 
@@ -264,7 +269,6 @@ public abstract class DataStore {
             }
         }
 
-        executorService.shutdown();
         return result;
     }
 
@@ -283,62 +287,71 @@ public abstract class DataStore {
         final Key key = conf.getKey(keyFieldName);
         boolean isPrivateMode = conf.isPrivateMode();
 
-        ExecutorService executorService = Executors.newFixedThreadPool(key.L);
         List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
 
         final Result result1 = result;
         final String keyFieldName1 = keyFieldName;
         final Embeddable struct11 = struct1;
 
-        for (int j = 0; j < key.L; j++) {
-            final int hashTableNo = j;
-            callables.add(new Callable<Result>() {
+        int partitionsNo = key.L / NO_FORKED_HASHTABLES;
+        if (key.L % NO_FORKED_HASHTABLES != 0) {
+            partitionsNo++;
+        }
+        
+        for (int p = 0; p < partitionsNo; p++) {
+            final int noHashTable=p*NO_FORKED_HASHTABLES;                                    
+            callables.add(new Callable<Result>() {                
                 public Result call() throws StoreInitException, NoKeyedFieldsException {
-                    String hashKey = buildHashKey(hashTableNo, struct11, keyFieldName1);
-                    if (keys.contains(hashKey)) {
-                        ArrayList arr = (ArrayList) keys.get(hashKey);
-
-                        for (int i = 0; i < arr.size(); i++) {
-                            String id = (String) arr.get(i);
-
-                            CharSequence cSeq = Key.KEYFIELD;
-                            String idRec = id;
-                            if (idRec.contains(cSeq)) {
-                                idRec = id.split(Key.KEYFIELD)[0];
-                            }
-                            Record dataRec = null;
-                            if (!conf.isPrivateMode()) {
-                                dataRec = (Record) records.get(idRec);   // which id and which record shoudl strip the "_keyField_" part , if any
-                            } else {
-                                dataRec = new Record();
-                                dataRec.setId(idRec);
-                            }
-                            result1.incPairsNo();
-                            if ((performComparisons) && (!result1.getMap(keyFieldName1).containsKey(id))) {
-                                Embeddable struct2 = (Embeddable) data.get(id);
-                                key.thresholdRatio = userPercentageThreshold;
-                                if (distance(struct11, struct2, key)) {
-                                    result1.add(keyFieldName1, dataRec);
-                                    int matchesNo = result1.getDataRecordsSize(keyFieldName1);
-                                    if (matchesNo >= maxQueryRows) {
-                                        return result1;
-                                    }
+                    for (int j = noHashTable; j < (noHashTable + NO_FORKED_HASHTABLES); j++) {
+                        if (j == key.L) {
+                            break;
+                        }
+                        String hashKey = buildHashKey(j, struct11, keyFieldName1);
+                        if (keys.contains(hashKey)) {
+                            ArrayList arr = (ArrayList) keys.get(hashKey);
+                            for (int i = 0; i < arr.size(); i++) {
+                                String id = (String) arr.get(i);
+                                CharSequence cSeq = Key.KEYFIELD;
+                                String idRec = id;
+                                if (idRec.contains(cSeq)) {
+                                    idRec = id.split(Key.KEYFIELD)[0];
+                                }
+                                Record dataRec = null;
+                                if (!conf.isPrivateMode()) {
+                                    dataRec = (Record) records.get(idRec);   // which id and which record shoudl strip the "_keyField_" part , if any
                                 } else {
+                                    dataRec = new Record();
+                                    dataRec.setId(idRec);
+                                }
+                                result1.incPairsNo();
+                                if ((performComparisons) && (!result1.getMap(keyFieldName1).containsKey(id))) {
+                                    Embeddable struct2 = (Embeddable) data.get(id);
+                                    key.thresholdRatio = userPercentageThreshold;
+                                    if (distance(struct11, struct2, key)) {
+                                        result1.add(keyFieldName1, dataRec);
+                                        int matchesNo = result1.getDataRecordsSize(keyFieldName1);
+                                        if (matchesNo >= maxQueryRows) {
+                                            return result1;
+                                        }
+                                    } else {
+                                    }
+
+                                } else {
+                                    result1.add(keyFieldName1, dataRec);
                                 }
 
-                            } else {
-                                result1.add(keyFieldName1, dataRec);
                             }
-
                         }
+
                     }
                     return result1;
                 }
+
             });
         }
 
         try {
-            List<Future<Result>> futures = executorService.invokeAll(callables);
+            List<Future<Result>> futures = hashTablesExecutor.invokeAll(callables);
             int k = 0;
             for (Future<Result> future : futures) {
 
@@ -354,7 +367,6 @@ public abstract class DataStore {
         } catch (ExecutionException | InterruptedException ex) {
             log.error("forkHashTables ", ex);
         }
-        executorService.shutdown();
 
     }
 
@@ -527,7 +539,7 @@ public abstract class DataStore {
         StoreConfigurationParams c = conf.get(Config.CONFIG_STORE, storeName);
         if (c != null) {
             try {
-                DataStore ds = LSHStoreFactory.build(c.getTarget(), storeName, c.getLSHStore(), c.getEngine(), null, false);
+                DataStore ds = DataStoreFactory.build(c.getTarget(), storeName, c.getLSHStore(), c.getEngine(), null, false);
                 return ds;
             } catch (ClassNotFoundException | NoSuchMethodException ex) {
                 log.error("Initialization error of data store " + storeName, ex);
@@ -536,8 +548,6 @@ public abstract class DataStore {
         throw new StoreInitException("store " + storeName + " not initialized. Check config.xml ");
     }
 
-    
-    
     public abstract String buildHashKey(int j, Embeddable struct, String keyFieldName);
 
     public abstract boolean distance(Embeddable struct1, Embeddable struct2, Key key);

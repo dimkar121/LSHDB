@@ -72,7 +72,7 @@ public abstract class Configuration implements Serializable {
         try {
             this.folder = folder;
             this.dbName = dbName;
-            db = DataStoreFactory.build(folder, dbName, "conf", dbEngine, massInsertMode);
+            db = StoreEngineFactory.build(folder, dbName, "conf", dbEngine, massInsertMode);
 
             if (db.contains(Configuration.KEY_NAMES)) {
                 this.keyFieldNames = (String[]) db.get(Configuration.KEY_NAMES);
@@ -100,7 +100,7 @@ public abstract class Configuration implements Serializable {
         try {
             this.folder = folder;
             this.dbName = dbName;
-            db = DataStoreFactory.build(folder, dbName, "conf", dbEngine, massInsertMode);
+            db = StoreEngineFactory.build(folder, dbName, "conf", dbEngine, massInsertMode);
 
             if (db.contains(Configuration.KEY_NAMES)) {
                 this.keyFieldNames = (String[]) db.get(Configuration.KEY_NAMES);

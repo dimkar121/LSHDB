@@ -12,6 +12,8 @@ import java.net.SocketException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.apache.log4j.Logger;
 
 /**
@@ -32,6 +34,9 @@ public class Server {
     DataStore[] lsh;
     int c = 0;
 
+    private ExecutorService workerExecutor = Executors.newCachedThreadPool();
+    
+    
     public Server(String configDir) {
 
         boolean queryRemoteNodes = true;
@@ -68,8 +73,8 @@ public class Server {
         lsh = new DataStore[dbNames.length];
         for (int i = 0; i < dbNames.length; i++) {
             try {
-                hc[i] = LSHStoreFactory.build(targets[i], dbNames[i], LSHConf[i], dbEngines[i], false);
-                lsh[i] = LSHStoreFactory.build(targets[i], dbNames[i], LSHStores[i], dbEngines[i], hc[i], false);
+                hc[i] = DataStoreFactory.build(targets[i], dbNames[i], LSHConf[i], dbEngines[i], false);
+                lsh[i] = DataStoreFactory.build(targets[i], dbNames[i], LSHStores[i], dbEngines[i], hc[i], false);
                 String[] remoteStores = config.get(i, Config.CONFIG_STORE, Config.CONFIG_ALIAS);
                 lsh[i].setQueryMode(true);
                 for (int a = 0; a < remoteStores.length; a++) {
@@ -108,9 +113,10 @@ public class Server {
             while (true) {
                 c++;
                 Worker worker = new Worker("t-" + c, serverSocket.accept(), lsh);
-                worker.run();
+                workerExecutor.execute(worker);
             }
-
+            
+            
         } catch (SocketException ex) {
             log.error("Waiting for connections: Socket error", ex);
 
@@ -118,7 +124,7 @@ public class Server {
             log.error("Waiting for connections: IO error", ex);
 
         }
-
+        this.workerExecutor.shutdown();
     }
 
     public static void main(String[] args) {
@@ -127,6 +133,6 @@ public class Server {
             configDir = args[0];
         }
         Server server = new Server(configDir);
-        server.communicate();
+        server.communicate();        
     }
 }
