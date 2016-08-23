@@ -83,7 +83,7 @@ ArrayList<Record> arr = result.getRecords();
 ```
 A one-line code that both opens a data store and submits a query is as follows:
 ```java
-HammingLSHStore.open(storeName).query(q).asList();
+HammingLSHStore.open("dblp").query(q).asList();
  ```
 
 Using the above query for the records mentioned above, the results contain the following entries:
