@@ -37,7 +37,7 @@ String storeName = "dblp";
 String engine = "gr.eap.LSHDB.MapDB";
 HammingLSHStore lsh = new HammingLSHStore(folder, storeName, engine);
 ```
-or using the compact form (provided that the congiguration is given in a XML file -- see below):
+or using the compact factory call (provided that the congiguration is given in a XML file -- see below):
 ```java
 HammingLSHStore.open("dblp");
 ```
