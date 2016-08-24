@@ -47,9 +47,10 @@ public class QueryRecord extends Record implements Cloneable{
         }
     }
     
-    public void setKeyedField(String fieldName, Object fieldValue, double userPercentageThreshold, boolean performComparisons){
+    public QueryRecord setKeyedField(String fieldName, Object fieldValue, double userPercentageThreshold, boolean performComparisons){
         set(fieldName,"",userPercentageThreshold, performComparisons);
         set(fieldName+Key.TOKENS,fieldValue,userPercentageThreshold, performComparisons);        
+        return this;
     }
     
     

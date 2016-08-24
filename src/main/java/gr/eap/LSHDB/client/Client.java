@@ -41,6 +41,11 @@ public class Client {
         this.port = port;
     }
 
+    public static Client initiate(String server, int port) {
+        return new Client(server, port);
+    }
+    
+    
     public Result queryServer(QueryRecord query) throws  NodeCommunicationException {
         try {
             socket = new Socket(server, port);
