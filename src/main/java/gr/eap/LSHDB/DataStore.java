@@ -22,6 +22,8 @@ import gr.eap.LSHDB.util.ListUtil;
 import gr.eap.LSHDB.util.StoreConfigurationParams;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import org.apache.log4j.Logger;
 
@@ -51,9 +53,9 @@ public abstract class DataStore {
     public final static String CONF = "conf";
     public final static String RECORDS = "records";
 
-    public final static int NO_FORKED_HASHTABLES = 4;
+    public final static int NO_FORKED_HASHTABLES = 10;
 
-    private ExecutorService hashTablesExecutor = Executors.newFixedThreadPool(200);
+    private ExecutorService hashTablesExecutor = Executors.newFixedThreadPool(600);
     private ExecutorService nodesExecutor = Executors.newCachedThreadPool();
 
     public void setMassInsertMode(boolean status) {
@@ -234,10 +236,8 @@ public abstract class DataStore {
                 });
             }
         }
-        
-        
-        log.debug("Before executing the callables (nodes) of the query.");
 
+        
         Result partialResults = null;
         try {
             List<Future<Result>> futures = nodesExecutor.invokeAll(callables);
@@ -271,7 +271,6 @@ public abstract class DataStore {
 
             }
         }
-        log.debug("Query nodes ok.");
         return result;
     }
 
@@ -280,7 +279,7 @@ public abstract class DataStore {
         return bean.getThreadCount();
     }
 
-    public void forkHashTables(Embeddable struct1, QueryRecord queryRec, String keyFieldName, Result result) {
+    public void forkHashTables(Embeddable struct1, final QueryRecord queryRec, String keyFieldName, Result result) {
         final Configuration conf = this.getConfiguration();
         final int maxQueryRows = queryRec.getMaxQueryRows();
         final boolean performComparisons = queryRec.performComparisons(keyFieldName);
@@ -290,12 +289,8 @@ public abstract class DataStore {
         final Key key = conf.getKey(keyFieldName);
         boolean isPrivateMode = conf.isPrivateMode();
 
-        
-      
-    
         List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
 
-        final Result result1 = result;
         final String keyFieldName1 = keyFieldName;
         final Embeddable struct11 = struct1;
 
@@ -303,23 +298,30 @@ public abstract class DataStore {
         if (key.L % NO_FORKED_HASHTABLES != 0) {
             partitionsNo++;
         }
+
+        final Result result1 = result;
+
+        
         
         for (int p = 0; p < partitionsNo; p++) {
             final int noHashTable=p*NO_FORKED_HASHTABLES;                                    
             callables.add(new Callable<Result>() {                
                 public Result call() throws StoreInitException, NoKeyedFieldsException {
+                                   
                     for (int j = noHashTable; j < (noHashTable + NO_FORKED_HASHTABLES); j++) {
                         if (j == key.L) {
-                            log.debug("break at "+j);
-                            break;
-                                
+                            break;                                
                         }
-                        log.debug("adding "+j);                
+                        //log.debug("adding "+j);                
                         String hashKey = buildHashKey(j, struct11, keyFieldName1);
+                        Instant start = Instant.now();   
+                            
+                                                 
+                        //log.debug("Before get Keys");                            
                         if (keys.contains(hashKey)) {
                             ArrayList arr = (ArrayList) keys.get(hashKey);
-                            for (int i = 0; i < arr.size(); i++) {
-                                log.debug(j+" "+arr.size());
+                            //log.debug(j+" "+arr.size());
+                            for (int i = 0; i < arr.size(); i++) {                                
                                 String id = (String) arr.get(i);
                                 CharSequence cSeq = Key.KEYFIELD;
                                 String idRec = id;
@@ -333,6 +335,8 @@ public abstract class DataStore {
                                     dataRec = new Record();
                                     dataRec.setId(idRec);
                                 }
+                                
+                                
                                 result1.incPairsNo();
                                 if ((performComparisons) && (!result1.getMap(keyFieldName1).containsKey(id))) {
                                     Embeddable struct2 = (Embeddable) data.get(id);
@@ -351,6 +355,9 @@ public abstract class DataStore {
                                 }
 
                             }
+                            Instant end = Instant.now();
+                            log.debug(j+" resolution time = "+Duration.between(start, end)+" size="+arr.size());                            
+                            
                         }
 
                     }
@@ -360,10 +367,11 @@ public abstract class DataStore {
             });
         }
         
-        log.debug("Before executing the callables (hash tables) of the query.");
- 
+        
         try {
             List<Future<Result>> futures = hashTablesExecutor.invokeAll(callables);
+          
+            
             int k = 0;
             for (Future<Result> future : futures) {
 
@@ -372,16 +380,13 @@ public abstract class DataStore {
 
                     k++;
                     if (partialResults != null) {
-                        result.getRecords().addAll(partialResults.getRecords());
-                        result.incPairsNoBy(partialResults.getPairsNo());
+                        //result.getRecords().addAll(partialResults.getRecords());
                     }
                 }
             }
         } catch (ExecutionException | InterruptedException ex) {
             log.error("forkHashTables ", ex);
-        }
-       log.debug("Formulated totally "+result.getPairsNo()+" pairs.");
-       log.debug("Callables hash tables completed.");
+        } 
     }
 
     public void setHashKeys(String id, Embeddable emb, String keyFieldName) {

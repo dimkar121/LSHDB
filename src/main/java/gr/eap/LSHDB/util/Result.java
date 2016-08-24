@@ -97,7 +97,7 @@ public class Result implements Serializable {
         return origin;
     }
 
-    public HashMap<String, Record> getMap(String fieldName) {
+    public synchronized HashMap<String, Record> getMap(String fieldName) {
         if (recordListMap.containsKey(fieldName)) {
             return recordListMap.get(fieldName).m;
         }
@@ -208,7 +208,7 @@ public class Result implements Serializable {
         }
     }
 
-    public boolean add(String fieldName, Record rec) {
+    public synchronized boolean add(String fieldName, Record rec) {
         if (recordListMap.containsKey(fieldName)) {
             return recordListMap.get(fieldName).add(rec);
         }
