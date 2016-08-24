@@ -53,7 +53,7 @@ public abstract class DataStore {
 
     public final static int NO_FORKED_HASHTABLES = 4;
 
-    private ExecutorService hashTablesExecutor = Executors.newCachedThreadPool();
+    private ExecutorService hashTablesExecutor = Executors.newFixedThreadPool(200);
     private ExecutorService nodesExecutor = Executors.newCachedThreadPool();
 
     public void setMassInsertMode(boolean status) {
@@ -234,6 +234,9 @@ public abstract class DataStore {
                 });
             }
         }
+        
+        
+        log.debug("Before executing the callables (nodes) of the query.");
 
         Result partialResults = null;
         try {
@@ -268,7 +271,7 @@ public abstract class DataStore {
 
             }
         }
-
+        log.debug("Query nodes ok.");
         return result;
     }
 
@@ -287,6 +290,9 @@ public abstract class DataStore {
         final Key key = conf.getKey(keyFieldName);
         boolean isPrivateMode = conf.isPrivateMode();
 
+        
+      
+    
         List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
 
         final Result result1 = result;
@@ -304,12 +310,16 @@ public abstract class DataStore {
                 public Result call() throws StoreInitException, NoKeyedFieldsException {
                     for (int j = noHashTable; j < (noHashTable + NO_FORKED_HASHTABLES); j++) {
                         if (j == key.L) {
+                            log.debug("break at "+j);
                             break;
+                                
                         }
+                        log.debug("adding "+j);                
                         String hashKey = buildHashKey(j, struct11, keyFieldName1);
                         if (keys.contains(hashKey)) {
                             ArrayList arr = (ArrayList) keys.get(hashKey);
                             for (int i = 0; i < arr.size(); i++) {
+                                log.debug(j+" "+arr.size());
                                 String id = (String) arr.get(i);
                                 CharSequence cSeq = Key.KEYFIELD;
                                 String idRec = id;
@@ -349,7 +359,9 @@ public abstract class DataStore {
 
             });
         }
-
+        
+        log.debug("Before executing the callables (hash tables) of the query.");
+ 
         try {
             List<Future<Result>> futures = hashTablesExecutor.invokeAll(callables);
             int k = 0;
@@ -361,13 +373,15 @@ public abstract class DataStore {
                     k++;
                     if (partialResults != null) {
                         result.getRecords().addAll(partialResults.getRecords());
+                        result.incPairsNoBy(partialResults.getPairsNo());
                     }
                 }
             }
         } catch (ExecutionException | InterruptedException ex) {
             log.error("forkHashTables ", ex);
         }
-
+       log.debug("Formulated totally "+result.getPairsNo()+" pairs.");
+       log.debug("Callables hash tables completed.");
     }
 
     public void setHashKeys(String id, Embeddable emb, String keyFieldName) {

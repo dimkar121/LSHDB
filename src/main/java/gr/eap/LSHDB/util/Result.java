@@ -50,6 +50,10 @@ public class Result implements Serializable {
         pairsNo.set(pairsNo.incrementAndGet());
     }
 
+    public void incPairsNoBy(int x) {
+        pairsNo.set(pairsNo.get()+x);
+    }
+    
     public int getPairsNo() {
         return pairsNo.get();
     }
