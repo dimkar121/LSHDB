@@ -194,7 +194,7 @@ public class Result implements Serializable {
         return j.prepare(this);
     }
     public ArrayList<Record> asList(){
-        prepare();
+        //prepare();
         return this.getRecords();
     }
     

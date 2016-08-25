@@ -25,6 +25,7 @@ import java.lang.management.ThreadMXBean;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.log4j.Logger;
 
 /**
@@ -237,7 +238,6 @@ public abstract class DataStore {
             }
         }
 
-        
         Result partialResults = null;
         try {
             List<Future<Result>> futures = nodesExecutor.invokeAll(callables);
@@ -279,7 +279,8 @@ public abstract class DataStore {
         return bean.getThreadCount();
     }
 
-    public void forkHashTables(Embeddable struct1, final QueryRecord queryRec, String keyFieldName, Result result) {
+    
+    public Result forkHashTables(Embeddable struct1, final QueryRecord queryRec, String keyFieldName) {
         final Configuration conf = this.getConfiguration();
         final int maxQueryRows = queryRec.getMaxQueryRows();
         final boolean performComparisons = queryRec.performComparisons(keyFieldName);
@@ -289,8 +290,7 @@ public abstract class DataStore {
         final Key key = conf.getKey(keyFieldName);
         boolean isPrivateMode = conf.isPrivateMode();
 
-        List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
-
+        
         final String keyFieldName1 = keyFieldName;
         final Embeddable struct11 = struct1;
 
@@ -299,29 +299,25 @@ public abstract class DataStore {
             partitionsNo++;
         }
 
-        final Result result1 = result;
-
-        
-        
+        Instant start = Instant.now();
+        Result result = new Result(queryRec);
         for (int p = 0; p < partitionsNo; p++) {
-            final int noHashTable=p*NO_FORKED_HASHTABLES;                                    
-            callables.add(new Callable<Result>() {                
+          
+            
+            List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
+            final int noHashTable = p * NO_FORKED_HASHTABLES;
+            callables.add(new Callable<Result>() {
                 public Result call() throws StoreInitException, NoKeyedFieldsException {
-                                   
+                    Result partialResult = new Result(queryRec);
                     for (int j = noHashTable; j < (noHashTable + NO_FORKED_HASHTABLES); j++) {
                         if (j == key.L) {
-                            break;                                
+                            break;
                         }
-                        //log.debug("adding "+j);                
                         String hashKey = buildHashKey(j, struct11, keyFieldName1);
-                        Instant start = Instant.now();   
-                            
-                                                 
-                        //log.debug("Before get Keys");                            
+
                         if (keys.contains(hashKey)) {
                             ArrayList arr = (ArrayList) keys.get(hashKey);
-                            //log.debug(j+" "+arr.size());
-                            for (int i = 0; i < arr.size(); i++) {                                
+                            for (int i = 0; i < arr.size(); i++) {
                                 String id = (String) arr.get(i);
                                 CharSequence cSeq = Key.KEYFIELD;
                                 String idRec = id;
@@ -335,58 +331,67 @@ public abstract class DataStore {
                                     dataRec = new Record();
                                     dataRec.setId(idRec);
                                 }
-                                
-                                
-                                result1.incPairsNo();
-                                if ((performComparisons) && (!result1.getMap(keyFieldName1).containsKey(id))) {
+
+                                partialResult.incPairsNo();
+                                if ((performComparisons) && (!partialResult.getMap(keyFieldName1).containsKey(id))) {
                                     Embeddable struct2 = (Embeddable) data.get(id);
                                     key.thresholdRatio = userPercentageThreshold;
                                     if (distance(struct11, struct2, key)) {
-                                        result1.add(keyFieldName1, dataRec);
-                                        int matchesNo = result1.getDataRecordsSize(keyFieldName1);
+                                        partialResult.add(keyFieldName1, dataRec);
+                                        int matchesNo = partialResult.getDataRecordsSize(keyFieldName1);
                                         if (matchesNo >= maxQueryRows) {
-                                            return result1;
+                                            return partialResult;
                                         }
                                     } else {
                                     }
 
                                 } else {
-                                    result1.add(keyFieldName1, dataRec);
+                                    partialResult.add(keyFieldName1, dataRec);
                                 }
 
                             }
-                            Instant end = Instant.now();
-                            log.debug(j+" resolution time = "+Duration.between(start, end)+" size="+arr.size());                            
-                            
+
                         }
 
                     }
-                    return result1;
+                    return partialResult;
                 }
 
             });
-        }
-        
-        
-        try {
-            List<Future<Result>> futures = hashTablesExecutor.invokeAll(callables);
-          
+
             
-            int k = 0;
-            for (Future<Result> future : futures) {
+            try {
+               
+                List<Future<Result>> futures = hashTablesExecutor.invokeAll(callables);
+                Instant end = Instant.now();
 
-                if (future != null) {
-                    Result partialResults = future.get();
-
-                    k++;
-                    if (partialResults != null) {
-                        //result.getRecords().addAll(partialResults.getRecords());
+                int k = 0;
+                for (Future<Result> future : futures) {
+                    if (future != null) {
+                        Result partialResults = future.get();
+                        k++;
+                        if (partialResults != null) {
+                            partialResults.prepare();
+                            result.getRecords().addAll(partialResults.getRecords());
+                            if (result.getRecords().size() >= maxQueryRows){
+                                throw new MaxNoRecordsReturnedException("Limit of returned records exceeded. No="+result.getRecords().size());
+                            }
+                        }
                     }
                 }
+                
+                if (Duration.between(start, end).getSeconds()>4) 
+                    return result;
+                
+            } catch (ExecutionException | InterruptedException ex) {
+                log.error("forkHashTables ", ex);
+            } catch(MaxNoRecordsReturnedException ex){
+                return result;
             }
-        } catch (ExecutionException | InterruptedException ex) {
-            log.error("forkHashTables ", ex);
-        } 
+
+        }
+
+        return result;
     }
 
     public void setHashKeys(String id, Embeddable emb, String keyFieldName) {
@@ -446,7 +451,7 @@ public abstract class DataStore {
     }
 
     public Result query(QueryRecord queryRecord) throws NoKeyedFieldsException {
-        Result result = new Result(queryRecord);
+        Result result = null;
         Configuration conf = this.getConfiguration();
         StoreEngine hashKeys = keys;
         StoreEngine dataKeys = data;
@@ -473,7 +478,7 @@ public abstract class DataStore {
                     if (keyFieldName.equals(fieldName)) {
                         Embeddable[] structArr = embMap.get(fieldName);
                         for (int k = 0; k < structArr.length; k++) {
-                            forkHashTables(structArr[k], queryRecord, keyFieldName, result);
+                            result = forkHashTables(structArr[k], queryRecord, keyFieldName);
 
                         }
                     }
@@ -489,7 +494,7 @@ public abstract class DataStore {
             } else {
                 emb = ((Embeddable[]) embMap.get(Configuration.RECORD_LEVEL))[0];
             }
-            forkHashTables(emb, queryRecord, Configuration.RECORD_LEVEL, result);
+            result = forkHashTables(emb, queryRecord, Configuration.RECORD_LEVEL);
         }
 
         return result;
