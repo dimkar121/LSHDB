@@ -105,10 +105,7 @@ public class MinHashLSHStore extends DataStore {
     public boolean distance(Embeddable struct1, Embeddable struct2, Key key) {
         BloomFilter bf1 = (BloomFilter) struct1;
         BloomFilter bf2 = (BloomFilter) struct2;
-        double t = ((MinHashKey) key).t;
-        if (key.thresholdRatio > 0.0) {
-            t = (int) Math.round(t * key.thresholdRatio);
-        }
+        double t = ((MinHashKey) key).t;        
         BitSet bs1 = bf1.getBitSet();
         BitSet bs2 = bf2.getBitSet();
         

@@ -45,8 +45,26 @@ public class HammingKey  extends Key{
       this(keyFieldName,30,.1,75,true,true, new BloomFilter(700,15,2));
     }
     
-    public void optimizeL() {
+    public HammingKey(int k, double delta, int t, int size) {       
+        this.k = k;
+        this.delta = delta;    
+        this.t = t;        
+        this.size = size;
+        optimizeL();  
+    }
+    
+    
+    
+    @Override
+    public int optimizeL() {
         L = (int) Math.ceil(Math.log(delta) / Math.log(1 - Math.pow((1.0 - (t * 1.0 / this.size)), k)));
+        return L;
+    }
+    
+    @Override    
+    public Key create(double thresholdRatio){
+        int t = (int) Math.round(this.t * thresholdRatio);        
+        return new HammingKey(k,delta,t,emb.getSize());
     }
     
     public int getLc() {

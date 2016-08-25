@@ -28,6 +28,17 @@ public abstract class Key implements Serializable{
     
     public double thresholdRatio;
     
+    
+    
+    
+    public int getL(){
+        return L;        
+    }
+    
+    public int getK(){
+        return k;        
+    }
+    
     Embeddable emb;
     public void setEmbeddable(Embeddable emb){
         this.emb = emb;
@@ -36,7 +47,9 @@ public abstract class Key implements Serializable{
         return this.emb;
     }
     
-    public abstract void optimizeL();
+    public abstract int optimizeL();  
+   
+    public abstract Key create(double thresholdRatio);
     
     public String getKeyFieldName(){
         return keyFieldName;

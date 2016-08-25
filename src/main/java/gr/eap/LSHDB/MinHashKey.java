@@ -41,9 +41,27 @@ public class MinHashKey extends Key{
         this(keyFieldName,5,.1,.60,true,true, new BloomFilter(700,15,2));
     }
     
-    public void optimizeL(){
+    
+    public MinHashKey(int k, double delta, double t) {       
+        this.k = k;
+        this.delta = delta;    
+        this.t = t;        
+        optimizeL();  
+    }
+    
+    
+    
+    @Override    
+    public Key create(double thresholdRatio){
+        double t =  this.t * thresholdRatio;                
+        return new MinHashKey(k,delta,t);
+    }   
+    
+    @Override
+    public int optimizeL(){
         double p1 = Math.pow(1.0 - t, k);
         L = (int) Math.ceil(Math.log(delta) / Math.log(1 - p1));
+        return L;
     }
     
     

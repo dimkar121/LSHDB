@@ -52,9 +52,7 @@ public class HammingLSHStore extends DataStore {
         BloomFilter bf1 = (BloomFilter) struct1;
         BloomFilter bf2 = (BloomFilter) struct2;
         int t = ((HammingKey) key).t;
-        if (key.thresholdRatio > 0.0) {
-            t = (int) Math.round(t * key.thresholdRatio);
-        }
+        
         BitSet bs1 = bf1.getBitSet();
         BitSet bs2 = bf2.getBitSet();
         int d = distance(bs1, bs2);

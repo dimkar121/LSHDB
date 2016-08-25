@@ -287,30 +287,30 @@ public abstract class DataStore {
         final double userPercentageThreshold = queryRec.getUserPercentageThreshold(keyFieldName);
         final StoreEngine keys = this.getKeyMap(keyFieldName);
         final StoreEngine data = this.getDataMap(keyFieldName);
-        final Key key = conf.getKey(keyFieldName);
+        Key key = conf.getKey(keyFieldName);
         boolean isPrivateMode = conf.isPrivateMode();
 
         
         final String keyFieldName1 = keyFieldName;
         final Embeddable struct11 = struct1;
 
-        int partitionsNo = key.L / NO_FORKED_HASHTABLES;
-        if (key.L % NO_FORKED_HASHTABLES != 0) {
+        final Key newKey = key.create(userPercentageThreshold);
+        log.debug("L="+key.getL()+" ratio="+userPercentageThreshold+" new L="+newKey.getL());
+        int partitionsNo = newKey.getL() / NO_FORKED_HASHTABLES;
+        if (newKey.getL() % NO_FORKED_HASHTABLES != 0) {
             partitionsNo++;
         }
 
         Instant start = Instant.now();
-        Result result = new Result(queryRec);
-        for (int p = 0; p < partitionsNo; p++) {
-          
+        final Result result = new Result(queryRec);
+        for (int p = 0; p < partitionsNo; p++) {         
             
             List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
             final int noHashTable = p * NO_FORKED_HASHTABLES;
             callables.add(new Callable<Result>() {
                 public Result call() throws StoreInitException, NoKeyedFieldsException {
-                    Result partialResult = new Result(queryRec);
                     for (int j = noHashTable; j < (noHashTable + NO_FORKED_HASHTABLES); j++) {
-                        if (j == key.L) {
+                        if (j == newKey.getL()) {
                             break;
                         }
                         String hashKey = buildHashKey(j, struct11, keyFieldName1);
@@ -332,21 +332,20 @@ public abstract class DataStore {
                                     dataRec.setId(idRec);
                                 }
 
-                                partialResult.incPairsNo();
-                                if ((performComparisons) && (!partialResult.getMap(keyFieldName1).containsKey(id))) {
+                                result.incPairsNo();
+                                if ((performComparisons) && (!result.getMap(keyFieldName1).containsKey(id))) {
                                     Embeddable struct2 = (Embeddable) data.get(id);
-                                    key.thresholdRatio = userPercentageThreshold;
-                                    if (distance(struct11, struct2, key)) {
-                                        partialResult.add(keyFieldName1, dataRec);
-                                        int matchesNo = partialResult.getDataRecordsSize(keyFieldName1);
+                                    if (distance(struct11, struct2, newKey)) {
+                                        result.add(keyFieldName1, dataRec);
+                                        int matchesNo = result.getDataRecordsSize(keyFieldName1);
                                         if (matchesNo >= maxQueryRows) {
-                                            return partialResult;
+                                            return result;
                                         }
                                     } else {
                                     }
 
                                 } else {
-                                    partialResult.add(keyFieldName1, dataRec);
+                                    result.add(keyFieldName1, dataRec);
                                 }
 
                             }
@@ -354,7 +353,7 @@ public abstract class DataStore {
                         }
 
                     }
-                    return partialResult;
+                    return result;
                 }
 
             });
@@ -365,7 +364,12 @@ public abstract class DataStore {
                 List<Future<Result>> futures = hashTablesExecutor.invokeAll(callables);
                 Instant end = Instant.now();
 
-                int k = 0;
+                if (result.getRecords().size() >= maxQueryRows){
+                                throw new MaxNoRecordsReturnedException("Limit of returned records exceeded. No="+result.getRecords().size());
+                }
+                
+                
+               /* int k = 0;
                 for (Future<Result> future : futures) {
                     if (future != null) {
                         Result partialResults = future.get();
@@ -378,12 +382,12 @@ public abstract class DataStore {
                             }
                         }
                     }
-                }
+                }*/
                 
                 if (Duration.between(start, end).getSeconds()>4) 
                     return result;
                 
-            } catch (ExecutionException | InterruptedException ex) {
+            } catch ( InterruptedException ex) {
                 log.error("forkHashTables ", ex);
             } catch(MaxNoRecordsReturnedException ex){
                 return result;
