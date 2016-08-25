@@ -37,11 +37,11 @@ String storeName = "dblp";
 String engine = "gr.eap.LSHDB.MapDB";
 HammingLSHStore lsh = new HammingLSHStore(folder, storeName, engine);
 ```
-or using the compact factory call (provided that the congiguration is given in a XML file -- see below):
+or using the compact factory call (provided that the configuration is given in a XML file -- see below):
 ```java
 HammingLSHStore.open("dblp");
 ```
-one opens a database named `dblp`, which is stored under `/home/LSHDB/stores`, and is created using `Hamming LSH` and `MapDB`[http://www.mapdb.org] as the underlying LSH implementation and noSQL engine, respectively.
+one opens a data store named `dblp`, which has been serialized under `/home/LSHDB/stores`, and has been created using `Hamming LSH` and `MapDB`[http://www.mapdb.org] as the underlying LSH implementation and noSQL engine, respectively.
 
 
 In the following, using the  we will showcase how one can insert some records, and submit similarity queries either by using Java objects or by performing asynchronous `AJAX` requests.
