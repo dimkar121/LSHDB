@@ -279,7 +279,6 @@ public abstract class DataStore {
         return bean.getThreadCount();
     }
 
-    
     public Result forkHashTables(Embeddable struct1, final QueryRecord queryRec, String keyFieldName) {
         final Configuration conf = this.getConfiguration();
         final int maxQueryRows = queryRec.getMaxQueryRows();
@@ -290,12 +289,11 @@ public abstract class DataStore {
         Key key = conf.getKey(keyFieldName);
         boolean isPrivateMode = conf.isPrivateMode();
 
-        
         final String keyFieldName1 = keyFieldName;
         final Embeddable struct11 = struct1;
 
         final Key newKey = key.create(userPercentageThreshold);
-        log.debug("L="+key.getL()+" ratio="+userPercentageThreshold+" new L="+newKey.getL());
+        log.debug("L=" + key.getL() + " ratio=" + userPercentageThreshold + " new L=" + newKey.getL());
         int partitionsNo = newKey.getL() / NO_FORKED_HASHTABLES;
         if (newKey.getL() % NO_FORKED_HASHTABLES != 0) {
             partitionsNo++;
@@ -303,8 +301,8 @@ public abstract class DataStore {
 
         Instant start = Instant.now();
         final Result result = new Result(queryRec);
-        for (int p = 0; p < partitionsNo; p++) {         
-            
+        for (int p = 0; p < partitionsNo; p++) {
+
             List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
             final int noHashTable = p * NO_FORKED_HASHTABLES;
             callables.add(new Callable<Result>() {
@@ -358,38 +356,35 @@ public abstract class DataStore {
 
             });
 
-            
             try {
-               
                 List<Future<Result>> futures = hashTablesExecutor.invokeAll(callables);
                 Instant end = Instant.now();
 
-                if (result.getRecords().size() >= maxQueryRows){
-                                throw new MaxNoRecordsReturnedException("Limit of returned records exceeded. No="+result.getRecords().size());
+                if (result.getRecords().size() >= maxQueryRows) {
+                    throw new MaxNoRecordsReturnedException("Limit of returned records exceeded. No=" + result.getRecords().size());
                 }
-                
-                
-               /* int k = 0;
-                for (Future<Result> future : futures) {
-                    if (future != null) {
-                        Result partialResults = future.get();
-                        k++;
-                        if (partialResults != null) {
-                            partialResults.prepare();
-                            result.getRecords().addAll(partialResults.getRecords());
-                            if (result.getRecords().size() >= maxQueryRows){
-                                throw new MaxNoRecordsReturnedException("Limit of returned records exceeded. No="+result.getRecords().size());
-                            }
-                        }
-                    }
-                }*/
-                
-                if (Duration.between(start, end).getSeconds()>4) 
+
+                /* int k = 0;
+                 for (Future<Result> future : futures) {
+                 if (future != null) {
+                 Result partialResults = future.get();
+                 k++;
+                 if (partialResults != null) {
+                 partialResults.prepare();
+                 result.getRecords().addAll(partialResults.getRecords());
+                 if (result.getRecords().size() >= maxQueryRows){
+                 throw new MaxNoRecordsReturnedException("Limit of returned records exceeded. No="+result.getRecords().size());
+                 }
+                 }
+                 }
+                 }*/
+                if (Duration.between(start, end).getSeconds() > 4) {
                     return result;
-                
-            } catch ( InterruptedException ex) {
+                }
+
+            } catch (InterruptedException ex) {
                 log.error("forkHashTables ", ex);
-            } catch(MaxNoRecordsReturnedException ex){
+            } catch (MaxNoRecordsReturnedException ex) {
                 return result;
             }
 

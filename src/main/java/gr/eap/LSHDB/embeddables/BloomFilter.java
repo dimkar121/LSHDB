@@ -23,30 +23,35 @@ package gr.eap.LSHDB.embeddables;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import gr.eap.LSHDB.Embeddable;
-import gr.eap.LSHDB.Embeddable;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.BitSet;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Random;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.log4j.Logger;
 
-public class BloomFilter implements Embeddable, Serializable, Cloneable{
+public class BloomFilter implements Embeddable, Serializable, Cloneable {
+
     final static Logger log = Logger.getLogger(BloomFilter.class);
     public static final long serialVersionUID = 67671L;
-    
+
+    public static final long PRIME_MODULUS = (1L << 31) - 1;
+
     private BitSet bitset;
     private int bitSetSize;
     private int bitsSet = 0;
     private int numberOfAddedElements;  // number of elements actually added to the Bloom filter
     private int k; // number of hash functions
     private int grams;
-    private int[] cols;    
+    private int[] cols;
     static final Charset charset = Charset.forName("UTF-8"); // encoding used for storing hash values as strings
-
+    private long a[];
+    private long b[];
+    Random r = new Random(10001L);
     
     public BloomFilter(int length, int k, int grams) {
         this.bitSetSize = length;
@@ -54,37 +59,43 @@ public class BloomFilter implements Embeddable, Serializable, Cloneable{
         this.cols = new int[bitSetSize];
         this.bitsSet = 0;
         this.k = k;
-        this.grams=grams;
+        a = new long[this.k];
+        b = new long[this.k];
+       /* for (int i=0; i<this.k; i++){
+            a[i] = r.nextInt(this.bitSetSize);
+            b[i] = r.nextInt(this.bitSetSize);
+        }*/
+        this.grams = grams;
     }
-    
-    public int getSize(){
+
+    public int getSize() {
         return this.bitSetSize;
     }
-    
-    public Embeddable freshCopy(){
-        return new BloomFilter(this.bitSetSize,this.k,this.grams);
+
+    public Embeddable freshCopy() {
+        return new BloomFilter(this.bitSetSize, this.k, this.grams);
     }
-    
+
     public BloomFilter(String s, int length, int k, int grams) {
-        this(length,k,grams);
+        this(length, k, grams);
         encode(s, true);
     }
 
     public BloomFilter(ArrayList<String> s, int length, int k, int grams) {
-        this(length,k,grams);        
+        this(length, k, grams);
         encode(s, true);
     }
 
-    
     public void embed(Object v) throws ClassCastException {
         String s = (String) v;
-        encode(s, true);        
-    }  
-    
+        encode(s, true);
+    }
 
+
+        
     public void addElement(String s) {
         //word=binascii.a2b_qp(qgram) # convert to binary
-
+        
         String mykey = "zuxujesw";
         String hex1 = "";
         String hex2 = "";
@@ -154,8 +165,14 @@ public class BloomFilter implements Embeddable, Serializable, Cloneable{
         }
         numberOfAddedElements++;
     }
-
-   
+    /*
+    public void addElement(String s) {        
+        for (int i = 0; i < this.k; i++) {
+            int position = ((int) (((a[i] * s.hashCode()) + b[i]) % PRIME_MODULUS)) % this.bitSetSize;
+             bitset.set(position);
+        }
+       numberOfAddedElements++;
+    }*/
 
     @Override
     public String toString() {
@@ -232,7 +249,6 @@ public class BloomFilter implements Embeddable, Serializable, Cloneable{
         return this.numberOfAddedElements;
     }
 
-   
     public void encode(String s, boolean padded) {
         if (padded) {
             s = "_" + s + "_";
@@ -259,6 +275,4 @@ public class BloomFilter implements Embeddable, Serializable, Cloneable{
         return bs;
     }
 
-    
-    
-    }
+}

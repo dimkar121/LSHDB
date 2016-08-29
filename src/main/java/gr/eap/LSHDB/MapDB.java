@@ -5,20 +5,15 @@
  */
 package gr.eap.LSHDB;
 
-import gr.eap.LSHDB.util.Record;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
+import java.io.Serializable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
-import org.mapdb.volume.ByteArrayVol;
-import org.mapdb.volume.MappedFileVol;
 import org.mapdb.volume.Volume;
 
 /**
@@ -41,11 +36,11 @@ final static Logger log = Logger.getLogger(MapDB.class);
 
  
 
-    public MapDB(String entity){
+    public MapDB(String storeName, String entity){
         db = DBMaker.memoryDB().make();                    
         mem = DBMaker.memoryDB().make();            
         map = mem.hashMap(entity).create();   
-        mapDisk = db.hashMap(entity).createOrOpen();
+        mapDisk = db.hashMap(entity).create();
     }
 
     

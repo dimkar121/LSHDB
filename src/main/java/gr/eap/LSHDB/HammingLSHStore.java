@@ -6,15 +6,14 @@
 package gr.eap.LSHDB;
 
 import gr.eap.LSHDB.embeddables.BloomFilter;
-import gr.eap.LSHDB.util.Config;
-import gr.eap.LSHDB.util.StoreConfigurationParams;
+import java.io.Serializable;
 import java.util.BitSet;
 
 /**
  *
  * @author dimkar
  */
-public class HammingLSHStore extends DataStore {
+public class HammingLSHStore extends DataStore  {
 
     HammingConfiguration hConf;
 

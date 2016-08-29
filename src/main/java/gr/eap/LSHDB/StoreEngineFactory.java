@@ -15,11 +15,14 @@ import org.apache.log4j.Logger;
 public class StoreEngineFactory {
 final static Logger log = Logger.getLogger(StoreEngineFactory.class);
     
-    public static StoreEngine build(String folder, String dbName, String file, String dbEngine,boolean massInsertMode) throws ClassNotFoundException, NoSuchMethodException  {
+    public static StoreEngine build(String folder, String storeName, String file, String dbEngine,boolean massInsertMode) throws ClassNotFoundException, NoSuchMethodException  {
         try {
             Class c = Class.forName(dbEngine);
-            StoreEngine db = (StoreEngine) c.getConstructor(String.class,String.class,String.class,boolean.class).newInstance(folder,dbName,file,massInsertMode);
-            
+            StoreEngine db = null;
+            //if (file.equals("conf"))
+              db = (StoreEngine) c.getConstructor(String.class,String.class,String.class,boolean.class).newInstance(folder, storeName,file,massInsertMode);
+            //else  db = (StoreEngine) c.getConstructor(String.class,String.class).newInstance(storeName,file);            
+             
             return db;         
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
             log.error(dbEngine + " Initialization problem of DataStore "  ,ex);
@@ -27,4 +30,6 @@ final static Logger log = Logger.getLogger(StoreEngineFactory.class);
         return null;
     }
 
+   
+    
 }

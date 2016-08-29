@@ -41,17 +41,7 @@ public class DataStoreFactory {
         return null;
     }
 
+        
     
-     public static Embeddable build(String embeddable, int size) throws ClassNotFoundException, NoSuchMethodException{
-        try {
-            Class c = Class.forName(embeddable);
-            Embeddable emb = (Embeddable) c.getConstructor(int.class).newInstance(size);
-            
-            return emb;
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
-            log.error(embeddable + " Initialization problem of Embeddable "  ,ex);
-        }
-        return null;
-    }
     
 }

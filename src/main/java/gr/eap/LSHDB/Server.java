@@ -5,6 +5,7 @@
 package gr.eap.LSHDB;
 
 import gr.eap.LSHDB.util.Config;
+import gr.eap.LSHDB.util.FileUtil;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
