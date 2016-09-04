@@ -44,12 +44,12 @@ HammingLSHStore.open("dblp");
 one opens a data store named `dblp`, which has been serialized under `/home/LSHDB/stores`, and has been created using `Hamming LSH` and `MapDB`[http://www.mapdb.org] as the underlying LSH implementation and noSQL engine, respectively.
 
 
-In the following, using the  we will showcase how one can insert some records, and submit similarity queries either by using Java objects or by performing asynchronous `AJAX` requests.
+In the following, using the [DBLP](http://dblp.uni-trier.de/) database, we will showcase how one can insert some records, and submit similarity queries either by using Java objects or by performing asynchronous `AJAX` requests.
 
 
 ##Inserting records into a store
 
-Assume a store that contains the titles of the publications contained in [DBLP](http://dblp.uni-trier.de/) along with the name of their first author. In order to support queries with respect to these names, we have to specify a keyed field, from which specialized data structures will be constructed and persisted. If one also needs to submit queries uisng the titles of the publications, then he/she should simply add an additional keyed field.
+Assume a store that contains the titles of the publications contained in DBLP along with the name of their first author. In order to support queries with respect to these names, we have to specify a keyed field, from which specialized data structures will be constructed and persisted. If one also needs to submit queries uisng the titles of the publications, then he/she should simply add an additional keyed field.
 ```java
 Key key1 = new HammingKey("author");
 Key key2 = new HammingKey("title");
