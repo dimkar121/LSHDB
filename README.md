@@ -9,7 +9,7 @@ LSHDB is a parallel and distributed data engine, which relies on the [locality-s
 for performing [record linkage](https://en.wikipedia.org/wiki/Record_linkage) (including [privacy-preserving record linkage](https://www.cs.cmu.edu/~rjhall/linkage_survey_final.pdf) - PPRL) and similarity search tasks. Parallelism lies at the core of its mechanism, since queries are executed in parallel using a pool of threads.
 
 ##The main features of LSHDB are:
-* __Easy extensibility__  Support for any noSQL data store, or any LSH technique can be easily plugged by extending or implementing the respective abstract classes or interfaces.
+* __Easy extensibility__  Support for any noSQL data store, or LSH technique can be easily plugged by extending or implementing the respective abstract classes or interfaces.
 * __Support of both the online query-driven mode and the offline batch process of record linkage__  LSHDB works in two modes; the first mode allows the resolution of the submitted queries in real time, while the second mode works in the traditional offline mode, which reports the results after the record linkage task has been completed.
 * __Suport of the PPRL mode__  In the case of PPRL, each participating party, termed also as a data custodian, may send its records, which have been previously masked, to a Trusted Third Party (TTP). The TTP configures and uses LSHDB for performing the linkage task and eventually sending the results back to the respective data custodians.
 * __Ease of use__  Queries can be submitted against a data store using just four lines of code.
