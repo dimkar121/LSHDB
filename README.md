@@ -4,6 +4,7 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/gr.eap.LSHDB/LSHDB/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22gr.eap.LSHDB%22)
 [![License](http://img.shields.io/:license-apache-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
+__The demo paper "LSHDB: A Parallel and Distributed Engine for Record Linkage and Similarity Search" by Dimitrios Karapiperis (HoU), Aris Gkoulalas-Divanis (IBM), and Vassilios S. Verykios (HoU) has been accepted in IEEE ICDM 2016, Barcelona, Spain.__
 
 LSHDB is a parallel and distributed data engine, which relies on the [locality-sensitive hashing](https://en.wikipedia.org/wiki/Locality-sensitive_hashing) (LSH) technique and noSQL systems, 
 for performing [record linkage](https://en.wikipedia.org/wiki/Record_linkage) (including [privacy-preserving record linkage](https://www.cs.cmu.edu/~rjhall/linkage_survey_final.pdf) - PPRL) and similarity search tasks. Parallelism lies at the core of its mechanism, since queries are executed in parallel using a pool of threads.
