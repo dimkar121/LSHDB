@@ -16,27 +16,27 @@ import org.apache.log4j.Logger;
 public class DataStoreFactory {
     final static Logger log = Logger.getLogger(DataStoreFactory.class);
 
-     public static Configuration build(String folder, String dbName, String LSHConf, String dbEngine, boolean massInsertMode) throws ClassNotFoundException, NoSuchMethodException {
+     public static Configuration build(String folder, String storeName, String LSHConf, String dbEngine, boolean massInsertMode) throws ClassNotFoundException, NoSuchMethodException {
         try {
             Class c = Class.forName(LSHConf);
-            Configuration db = (Configuration) c.getConstructor(String.class, String.class, String.class, boolean.class).newInstance(folder, dbName, dbEngine, massInsertMode);            
+            Configuration db = (Configuration) c.getConstructor(String.class, String.class, String.class, boolean.class).newInstance(folder, storeName, dbEngine, massInsertMode);            
             return db;
         }  catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
-            log.error(LSHConf + " Initialization problem of LSHConf "  ,ex);
+            log.error(LSHConf + " Initialization problem of LSHConf " +storeName ,ex);
         }
         return null;
     }
     
     
     
-    public static DataStore build(String folder, String dbName, String LSHStore, String dbEngine, Configuration conf, boolean massInsertMode) throws ClassNotFoundException, NoSuchMethodException{
+    public static DataStore build(String folder, String storeName, String LSHStore, String dbEngine, Configuration conf, boolean massInsertMode) throws ClassNotFoundException, NoSuchMethodException{
         try {
             Class c = Class.forName(LSHStore);
-            DataStore db = (DataStore) c.getConstructor(String.class, String.class, String.class, Configuration.class, boolean.class).newInstance(folder, dbName, dbEngine, conf, massInsertMode);
+            DataStore db = (DataStore) c.getConstructor(String.class, String.class, String.class, Configuration.class, boolean.class).newInstance(folder, storeName, dbEngine, conf, massInsertMode);
             
             return db;
         }  catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
-            log.error(LSHStore + " Initialization problem of LSHStore "  ,ex);
+            log.error(LSHStore + " Initialization problem of LSHStore "+storeName  ,ex);
         }
         return null;
     }

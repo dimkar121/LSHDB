@@ -39,6 +39,8 @@ public class Config {
     public final static String CONFIG_LSH = "LSHStore";
     public final static String CONFIG_CONFIGURATION = "LSHConfiguration";
     public final static String CONFIG_REMOTE_NODES = "remote_nodes";
+    public final static String CONFIG_REMOTE_STORES = "remote_stores";
+    public final static String CONFIG_LOCAL_STORES = "local_stores";    
     public final static String CONFIG_URL = "url";
     public final static String CONFIG_ENABLED = "enabled";
 
@@ -88,7 +90,21 @@ public class Config {
             a = new String[nodes.getLength()];
             for (int k = 0; k < nodes.getLength(); k++) {
                 Node node = nodes.item(k);
+
                 a[k] = node.getTextContent();
+
+                if (tags.length == 3) {
+                    Element el1 = (Element) node;
+                    if (el1 != null) {
+                        NodeList nodes1 = el1.getElementsByTagName(tags[2]);
+
+                        a = new String[nodes1.getLength()];
+                        for (int j = 0; j < nodes1.getLength(); j++) {
+                            Node node2 = nodes1.item(j);
+                            a[j] = node2.getTextContent();
+                        }
+                    }
+                }
                 //System.out.println(node.getNodeValue()+" "+node.getTextContent()+" "+node.getNodeName());
             }
         }
@@ -108,30 +124,28 @@ public class Config {
         }
         return names;
     }
-    
+
     public StoreConfigurationParams get(String key, String value) {
         NodeList nodes = document.getElementsByTagName(key);
         StoreConfigurationParams c = new StoreConfigurationParams();
         for (int i = 0; i < nodes.getLength(); i++) {
-            Element node =(Element) nodes.item(i);            
-            Node nameNode = node.getElementsByTagName(Config.CONFIG_STORE_NAME).item(i);            
-            if (nameNode.getTextContent().equals(value)){
-                Node targetNode = node.getElementsByTagName(Config.CONFIG_TARGET).item(i);                        
+            Element node = (Element) nodes.item(i);
+            Node nameNode = node.getElementsByTagName(Config.CONFIG_STORE_NAME).item(i);
+            if (nameNode.getTextContent().equals(value)) {
+                Node targetNode = node.getElementsByTagName(Config.CONFIG_TARGET).item(i);
                 c.setTarget(targetNode.getTextContent());
-                Node engineNode = node.getElementsByTagName(Config.CONFIG_NOSQL_ENGINE).item(i);            
+                Node engineNode = node.getElementsByTagName(Config.CONFIG_NOSQL_ENGINE).item(i);
                 c.setEngine(engineNode.getTextContent());
-                Node configurationNode = node.getElementsByTagName(Config.CONFIG_CONFIGURATION).item(i);            
-                c.setConfiguration(configurationNode.getTextContent());                
-                Node LSHStoreNode = node.getElementsByTagName(Config.CONFIG_LSH).item(i);            
+                Node configurationNode = node.getElementsByTagName(Config.CONFIG_CONFIGURATION).item(i);
+                c.setConfiguration(configurationNode.getTextContent());
+                Node LSHStoreNode = node.getElementsByTagName(Config.CONFIG_LSH).item(i);
                 c.setLSHStore(LSHStoreNode.getTextContent());
-                
-                
-                log.info(c.getEngine()+" "+c.getTarget()+" "+c.configuration);
+
+                log.info(c.getEngine() + " " + c.getTarget() + " " + c.configuration);
                 return c;
-            }    
+            }
         }
         return null;
     }
-    
-    
+
 }

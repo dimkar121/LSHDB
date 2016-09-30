@@ -43,9 +43,9 @@ final static Logger log = Logger.getLogger(Worker.class);
         return this.result;
     }
 
-    public DataStore getDB(String dbName) {
+    public DataStore getDB(String storeName) {
         for (int i = 0; i < lsh.length; i++) {
-            if (lsh[i].getDbName().equals(dbName)) {
+            if (lsh[i].getStoreName().equals(storeName)) {
                 return lsh[i];
             }
         }
@@ -96,6 +96,7 @@ final static Logger log = Logger.getLogger(Worker.class);
                 String msg = "Query "+ this.name +" completed in " + secondsInd + " secs.";
                 log.info(msg);
                 result.prepare();
+                        
             }
 
         } catch (NoKeyedFieldsException ex) {
@@ -158,7 +159,7 @@ final static Logger log = Logger.getLogger(Worker.class);
                     Vector<String> dbs = new Vector<String>();
                     for (int i = 0; i < lsh.length; i++) {
                         if (lsh[i].getConfiguration().isKeyed()) {
-                            dbs.add(lsh[i].getDbName());
+                            dbs.add(lsh[i].getStoreName());
                         }
                     }
                     reply.setStatus(Result.STATUS_OK);
@@ -189,10 +190,10 @@ final static Logger log = Logger.getLogger(Worker.class);
 
                                     if (db.getConfiguration().isKeyed) {
                                         String value = (String) pair.getValue();
-                                        String[] values = value.split(" ");
+                                        //String[] values = value.split(" ");
 
                                         query.set(pair.getKey() + "", value, sim, true);
-                                        query.set(pair.getKey() + Key.TOKENS, values, sim, true);
+                                        query.set(pair.getKey() + Key.TOKENS, new String[]{value}, sim, true);
                                     } else {
                                         query.set(pair.getKey() + "", pair.getValue());
                                     }

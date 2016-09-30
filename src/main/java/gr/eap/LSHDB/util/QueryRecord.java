@@ -83,6 +83,15 @@ public class QueryRecord extends Record implements Cloneable{
         this.storeName = storeName;
         this.maxQueryRows = maxQueryRows;
     }
+    
+    public QueryRecord(String storeName,int maxQueryRows, Record rec) {
+        this(storeName, maxQueryRows);    
+        for (int i=0; i<rec.getFieldNames().size(); i++){
+            String fieldName = rec.getFieldNames().get(i);            
+            this.set(fieldName, rec.get(fieldName));
+        }
+    }
+    
 
     public QueryRecord(int maxQueryRows) {
         super();    

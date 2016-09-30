@@ -38,8 +38,16 @@ public class Server {
     private ExecutorService workerExecutor = Executors.newCachedThreadPool();
     
     
+    public DataStore getDataStore(String storeName){
+          for (int i=0;i<lsh.length;i++){
+              if (lsh[i].getStoreName().equals(storeName))
+                  return lsh[i];
+          }
+        return null;  
+    }
+    
+    
     public Server(String configDir) {
-
         boolean queryRemoteNodes = true;
         Config config = new Config(Config.CONFIG_FILE);
         alias = config.get(Config.CONFIG_ALIAS);
@@ -55,18 +63,21 @@ public class Server {
         String[] LSHStores = config.getList(Config.CONFIG_LSH);
         String[] LSHConf = config.getList(Config.CONFIG_CONFIGURATION);
         String[] remoteAliases = config.get(0, Config.CONFIG_REMOTE_NODES, Config.CONFIG_ALIAS);
+        
         String[] remoteNodeUrls = config.get(0, Config.CONFIG_REMOTE_NODES, Config.CONFIG_URL);
         String[] ports = config.get(0, Config.CONFIG_REMOTE_NODES, Config.CONFIG_PORT);
         String[] enableds = config.get(0, Config.CONFIG_REMOTE_NODES, Config.CONFIG_ENABLED);
 
-        HashMap<String, ArrayList<String>> aliasMap = new HashMap<String, ArrayList<String>>();
+        HashMap<String, ArrayList<String>> remoteAliasesMap = new HashMap<String, ArrayList<String>>();
+        
+        
         if (remoteAliases != null) {
             for (int i = 0; i < remoteAliases.length; i++) {
                 ArrayList<String> confs = new ArrayList<String>();
                 confs.add(remoteNodeUrls[i]);
                 confs.add(ports[i]);
                 confs.add(enableds[i]);
-                aliasMap.put(remoteAliases[i], confs);
+                remoteAliasesMap.put(remoteAliases[i], confs);
             }
         }
 
@@ -76,12 +87,13 @@ public class Server {
             try {
                 hc[i] = DataStoreFactory.build(targets[i], dbNames[i], LSHConf[i], dbEngines[i], false);
                 lsh[i] = DataStoreFactory.build(targets[i], dbNames[i], LSHStores[i], dbEngines[i], hc[i], false);
-                String[] remoteStores = config.get(i, Config.CONFIG_STORE, Config.CONFIG_ALIAS);
+                String[] remoteStores = config.get(i, Config.CONFIG_STORE, Config.CONFIG_REMOTE_STORES ,Config.CONFIG_ALIAS);
+                String[] localStores = config.get(i, Config.CONFIG_STORE, Config.CONFIG_LOCAL_STORES ,Config.CONFIG_ALIAS);
                 lsh[i].setQueryMode(true);
                 for (int a = 0; a < remoteStores.length; a++) {
                     String alias = remoteStores[a];
-                    if (aliasMap.containsKey(alias)) {
-                        ArrayList<String> confs = aliasMap.get(alias);
+                    if (remoteAliasesMap.containsKey(alias)) {
+                        ArrayList<String> confs = remoteAliasesMap.get(alias);
                         String url = confs.get(0);
                         int port = Integer.parseInt(confs.get(1));
                         boolean enabled = Boolean.parseBoolean(confs.get(2));
@@ -100,7 +112,6 @@ public class Server {
             }
         }
         log.info("LSHDB instance started at " + LocalDateTime.now());
-
     }
 
     public String getLocalServerAlias() {

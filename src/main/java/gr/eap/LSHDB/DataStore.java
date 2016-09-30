@@ -37,7 +37,7 @@ public abstract class DataStore {
     final static Logger log = Logger.getLogger(DataStore.class);
 
     String folder;
-    String dbName;
+    String storeName;
     String dbEngine;
     public String pathToDB;
     public StoreEngine data;
@@ -46,6 +46,7 @@ public abstract class DataStore {
     HashMap<String, StoreEngine> keyMap = new HashMap<String, StoreEngine>();
     HashMap<String, StoreEngine> dataMap = new HashMap<String, StoreEngine>();
     ArrayList<Node> nodes = new ArrayList<Node>();
+    ArrayList<DataStore> localStores = new ArrayList<DataStore>();
     boolean queryRemoteNodes = false;
     boolean massInsertMode = false;
 
@@ -89,8 +90,26 @@ public abstract class DataStore {
         return this.nodes;
     }
 
+    public ArrayList<DataStore> getLocalStores() {
+        return this.localStores;
+    }
+
     public void addNode(Node n) {
         this.nodes.add(n);
+    }
+
+    public void addLocalStore(DataStore ds) {
+        this.localStores.add(ds);
+    }
+
+    public DataStore getLocalStore(String storeName) {
+        for (int i = 0; i < this.getLocalStores().size(); i++) {
+            DataStore ds = this.getLocalStores().get(i);
+            if (ds.getStoreName().equals(storeName)) {
+                return ds;
+            }
+        }
+        return null;
     }
 
     public StoreEngine getKeyMap(String fieldName) {
@@ -100,7 +119,7 @@ public abstract class DataStore {
 
     public void setKeyMap(String fieldName, boolean massInsertMode) throws NoSuchMethodException, ClassNotFoundException {
         fieldName = fieldName.replaceAll(" ", "");
-        keyMap.put(fieldName, StoreEngineFactory.build(folder, dbName, KEYS + "_" + fieldName, dbEngine, massInsertMode));
+        keyMap.put(fieldName, StoreEngineFactory.build(folder, storeName, KEYS + "_" + fieldName, dbEngine, massInsertMode));
     }
 
     public StoreEngine getDataMap(String fieldName) {
@@ -110,7 +129,7 @@ public abstract class DataStore {
 
     public void setDataMap(String fieldName, boolean massInsertMode) throws NoSuchMethodException, ClassNotFoundException {
         fieldName = fieldName.replaceAll(" ", "");
-        dataMap.put(fieldName, StoreEngineFactory.build(folder, dbName, DATA + "_" + fieldName, dbEngine, massInsertMode));
+        dataMap.put(fieldName, StoreEngineFactory.build(folder, storeName, DATA + "_" + fieldName, dbEngine, massInsertMode));
     }
 
     /*
@@ -132,8 +151,8 @@ public abstract class DataStore {
     public void init(String dbEngine, boolean massInsertMode) throws StoreInitException {
         try {
             this.dbEngine = dbEngine;
-            pathToDB = folder + System.getProperty("file.separator") + dbName;
-            records = StoreEngineFactory.build(folder, dbName, RECORDS, dbEngine, massInsertMode);
+            pathToDB = folder + System.getProperty("file.separator") + storeName;
+            records = StoreEngineFactory.build(folder, storeName, RECORDS, dbEngine, massInsertMode);
             if ((this.getConfiguration() != null) && (this.getConfiguration().isKeyed())) {
                 String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
                 for (int j = 0; j < keyFieldNames.length; j++) {
@@ -142,8 +161,8 @@ public abstract class DataStore {
                     setDataMap(keyFieldName, massInsertMode);
                 }
             } else {
-                keys = StoreEngineFactory.build(folder, dbName, KEYS, dbEngine, massInsertMode);
-                data = StoreEngineFactory.build(folder, dbName, DATA, dbEngine, massInsertMode);
+                keys = StoreEngineFactory.build(folder, storeName, KEYS, dbEngine, massInsertMode);
+                data = StoreEngineFactory.build(folder, storeName, DATA, dbEngine, massInsertMode);
                 keyMap.put(Configuration.RECORD_LEVEL, keys);
                 dataMap.put(Configuration.RECORD_LEVEL, data);
 
@@ -174,8 +193,8 @@ public abstract class DataStore {
         }
     }
 
-    public String getDbName() {
-        return this.dbName;
+    public String getStoreName() {
+        return this.storeName;
     }
 
     public String getDbEngine() {
@@ -184,9 +203,9 @@ public abstract class DataStore {
 
     public Result forkQuery(QueryRecord queryRecord) {
         Result result = new Result(queryRecord);
-        if (this.getNodes().size() == 0) {
-            return result;
-        }
+        //if (this.getNodes().size() == 0) {
+          //  return result;
+        //}
         // should implment get Active Nodes
         List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
 
@@ -238,10 +257,14 @@ public abstract class DataStore {
             }
         }
 
+        
+
         Result partialResults = null;
         try {
+           
+            
             List<Future<Result>> futures = nodesExecutor.invokeAll(callables);
-
+            
             for (Future<Result> future : futures) {
 
                 if (future != null) {  //partialResults should not come null
@@ -274,11 +297,15 @@ public abstract class DataStore {
         return result;
     }
 
+    
+    
     public int getThreadsNo() {
         ThreadMXBean bean = ManagementFactory.getThreadMXBean();
         return bean.getThreadCount();
     }
 
+    
+    
     public Result forkHashTables(Embeddable struct1, final QueryRecord queryRec, String keyFieldName) {
         final Configuration conf = this.getConfiguration();
         final int maxQueryRows = queryRec.getMaxQueryRows();
@@ -293,7 +320,6 @@ public abstract class DataStore {
         final Embeddable struct11 = struct1;
 
         final Key newKey = key.create(userPercentageThreshold);
-        log.debug("L=" + key.getL() + " ratio=" + userPercentageThreshold + " new L=" + newKey.getL());
         int partitionsNo = newKey.getL() / NO_FORKED_HASHTABLES;
         if (newKey.getL() % NO_FORKED_HASHTABLES != 0) {
             partitionsNo++;
@@ -495,7 +521,7 @@ public abstract class DataStore {
             }
             result = forkHashTables(emb, queryRecord, Configuration.RECORD_LEVEL);
         }
-
+        
         return result;
     }
 

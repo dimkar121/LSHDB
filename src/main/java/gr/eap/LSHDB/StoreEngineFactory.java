@@ -25,7 +25,7 @@ final static Logger log = Logger.getLogger(StoreEngineFactory.class);
              
             return db;         
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
-            log.error(dbEngine + " Initialization problem of DataStore "  ,ex);
+            log.error(dbEngine + " Initialization problem of DataStore "+storeName  ,ex);
         }
         return null;
     }

@@ -19,7 +19,7 @@ public class HammingLSHStore extends DataStore  {
 
     public HammingLSHStore(String folder, String dbName, String dbEngine, Configuration hc, boolean massInsertMode) throws StoreInitException {
         this.folder = folder;
-        this.dbName = dbName;
+        this.storeName = dbName;
         this.massInsertMode = massInsertMode;
         if (hc == null) {
             hConf = new HammingConfiguration(folder, dbName, dbEngine, massInsertMode);
@@ -34,7 +34,7 @@ public class HammingLSHStore extends DataStore  {
     
     public HammingLSHStore(String folder, String dbName, String dbEngine) throws StoreInitException {
         this.folder = folder;
-        this.dbName = dbName;
+        this.storeName = dbName;
         hConf = new HammingConfiguration(folder, dbName, dbEngine, massInsertMode);
         init(dbEngine, massInsertMode);
         hConf.saveConfiguration();

@@ -36,7 +36,7 @@ public class MinHashLSHStore extends DataStore {
 
     public MinHashLSHStore(String folder, String dbName, String dbEngine, Configuration hc,boolean massInsertMode) throws StoreInitException {
         this.folder = folder;
-        this.dbName = dbName;
+        this.storeName = dbName;
         this.massInsertMode = massInsertMode;
         if (hc == null) {
             hConf = new MinHashConfiguration(folder, dbName, dbEngine,massInsertMode);
