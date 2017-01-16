@@ -81,7 +81,7 @@ final static Logger log = Logger.getLogger(Worker.class);
                 if (!this.query.isClientQuery()) {
                     result = db.query(this.query);
                     result.setStatus(Result.STATUS_OK);
-                    result.prepare();
+                    //result.prepare();
                 } else {
                     result = db.forkQuery(query);
                 }
@@ -95,8 +95,8 @@ final static Logger log = Logger.getLogger(Worker.class);
                 result.setTime(secondsInd);
                 String msg = "Query "+ this.name +" completed in " + secondsInd + " secs.";
                 log.info(msg);
-                result.prepare();
-                        
+                result.prepare();    
+                
             }
 
         } catch (NoKeyedFieldsException ex) {

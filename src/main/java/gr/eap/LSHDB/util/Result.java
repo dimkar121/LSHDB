@@ -154,7 +154,7 @@ public class Result implements Serializable {
         return arr;
     }
 
-    public void prepare() {
+    public void prepare() {       
         ArrayList<String> fieldNames = queryRecord.getQueryFieldNames(); //   queryRecord.getFieldNames();  // 
         HashMap<String, HashMap<String, Record>> mapField = new HashMap<String, HashMap<String, Record>>();
 

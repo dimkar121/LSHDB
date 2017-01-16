@@ -390,24 +390,7 @@ public abstract class DataStore {
                     throw new MaxNoRecordsReturnedException("Limit of returned records exceeded. No=" + result.getRecords().size());
                 }
 
-                /* int k = 0;
-                 for (Future<Result> future : futures) {
-                 if (future != null) {
-                 Result partialResults = future.get();
-                 k++;
-                 if (partialResults != null) {
-                 partialResults.prepare();
-                 result.getRecords().addAll(partialResults.getRecords());
-                 if (result.getRecords().size() >= maxQueryRows){
-                 throw new MaxNoRecordsReturnedException("Limit of returned records exceeded. No="+result.getRecords().size());
-                 }
-                 }
-                 }
-                 }*/
-                if (Duration.between(start, end).getSeconds() > 4) {
-                    return result;
-                }
-
+             
             } catch (InterruptedException ex) {
                 log.error("forkHashTables ", ex);
             } catch (MaxNoRecordsReturnedException ex) {
