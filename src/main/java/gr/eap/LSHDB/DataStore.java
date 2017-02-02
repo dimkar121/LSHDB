@@ -18,15 +18,20 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import gr.eap.LSHDB.client.Client;
 import gr.eap.LSHDB.util.Config;
+import gr.eap.LSHDB.util.FileUtil;
 import gr.eap.LSHDB.util.ListUtil;
 import gr.eap.LSHDB.util.StoreConfigurationParams;
+import java.io.File;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Iterator;
 import org.apache.log4j.Logger;
+import static org.fusesource.leveldbjni.JniDBFactory.asString;
+import static org.fusesource.leveldbjni.JniDBFactory.bytes;
+import org.iq80.leveldb.DBIterator;
 
 /**
  *
@@ -59,6 +64,12 @@ public abstract class DataStore {
 
     private ExecutorService hashTablesExecutor = Executors.newFixedThreadPool(600);
     private ExecutorService nodesExecutor = Executors.newCachedThreadPool();
+
+    public static boolean exists(String folder, String storeName) {
+        String pathToDB = folder + System.getProperty("file.separator") + storeName;
+        File theDir = new File(pathToDB);
+        return theDir.exists();
+    }
 
     public void setMassInsertMode(boolean status) {
         massInsertMode = status;
@@ -132,22 +143,7 @@ public abstract class DataStore {
         dataMap.put(fieldName, StoreEngineFactory.build(folder, storeName, DATA + "_" + fieldName, dbEngine, massInsertMode));
     }
 
-    /*
-     public DataStore(StoreEngine db){
-     if ((this.getConfiguration() != null) && (this.getConfiguration().isKeyed())) {
-     String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
-     for (int j = 0; j < keyFieldNames.length; j++) {
-     String keyFieldName = keyFieldNames[j];
-                    
-     }
-     } else {
-     keys = 
-     data = 
-     keyMap.put(Configuration.RECORD_LEVEL, keys);
-     dataMap.put(Configuration.RECORD_LEVEL, data);
-
-     }
-     }*/
+    
     public void init(String dbEngine, boolean massInsertMode) throws StoreInitException {
         try {
             this.dbEngine = dbEngine;
@@ -204,7 +200,7 @@ public abstract class DataStore {
     public Result forkQuery(QueryRecord queryRecord) {
         Result result = new Result(queryRecord);
         //if (this.getNodes().size() == 0) {
-          //  return result;
+        //  return result;
         //}
         // should implment get Active Nodes
         List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
@@ -257,14 +253,11 @@ public abstract class DataStore {
             }
         }
 
-        
-
         Result partialResults = null;
         try {
-           
-            
+
             List<Future<Result>> futures = nodesExecutor.invokeAll(callables);
-            
+
             for (Future<Result> future : futures) {
 
                 if (future != null) {  //partialResults should not come null
@@ -297,15 +290,11 @@ public abstract class DataStore {
         return result;
     }
 
-    
-    
     public int getThreadsNo() {
         ThreadMXBean bean = ManagementFactory.getThreadMXBean();
         return bean.getThreadCount();
     }
 
-    
-    
     public Result forkHashTables(Embeddable struct1, final QueryRecord queryRec, String keyFieldName) {
         final Configuration conf = this.getConfiguration();
         final int maxQueryRows = queryRec.getMaxQueryRows();
@@ -325,24 +314,41 @@ public abstract class DataStore {
             partitionsNo++;
         }
 
+        
         Instant start = Instant.now();
         final Result result = new Result(queryRec);
+
         for (int p = 0; p < partitionsNo; p++) {
 
             List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
             final int noHashTable = p * NO_FORKED_HASHTABLES;
-            callables.add(new Callable<Result>() {
+            callables.add(new Callable<Result>() {                
                 public Result call() throws StoreInitException, NoKeyedFieldsException {
-                    for (int j = noHashTable; j < (noHashTable + NO_FORKED_HASHTABLES); j++) {
+                    Iterable iterator = keys.createIterator();
+                    int u = noHashTable + NO_FORKED_HASHTABLES;
+                    for (int j = noHashTable; j < u; j++) {
                         if (j == newKey.getL()) {
+                            System.out.println("exit "+j+" "+newKey.getL());
                             break;
                         }
                         String hashKey = buildHashKey(j, struct11, keyFieldName1);
 
-                        if (keys.contains(hashKey)) {
-                            ArrayList arr = (ArrayList) keys.get(hashKey);
-                            for (int i = 0; i < arr.size(); i++) {
-                                String id = (String) arr.get(i);
+                        //if (keys.contains(hashKey)) {
+                        //  ArrayList arr = (ArrayList) keys.get(hashKey);
+                        //for (int i = 0; i < arr.size(); i++) {
+                        System.out.println("hashKey=" + hashKey + " " + j + " " +u);
+
+                        for (iterator.seek(hashKey); iterator.hasNext(); iterator.next()) {
+                            String key = iterator.getKey();
+                            System.out.println("key=" + key);
+                            if (key.startsWith(hashKey)) {
+                                String id = "";
+                                try {
+                                    id = iterator.getValue() + "";
+                                } catch (Exception ex) {
+                                    ex.printStackTrace();
+                                }
+
                                 CharSequence cSeq = Key.KEYFIELD;
                                 String idRec = id;
                                 if (idRec.contains(cSeq)) {
@@ -372,11 +378,13 @@ public abstract class DataStore {
                                     result.add(keyFieldName1, dataRec);
                                 }
 
+                            } else {
+                                break;
                             }
-
                         }
 
                     }
+                    iterator.close();
                     return result;
                 }
 
@@ -390,15 +398,15 @@ public abstract class DataStore {
                     throw new MaxNoRecordsReturnedException("Limit of returned records exceeded. No=" + result.getRecords().size());
                 }
 
-             
             } catch (InterruptedException ex) {
                 log.error("forkHashTables ", ex);
             } catch (MaxNoRecordsReturnedException ex) {
+                
                 return result;
             }
 
         }
-
+       
         return result;
     }
 
@@ -414,16 +422,16 @@ public abstract class DataStore {
 
         for (int j = 0; j < key.L; j++) {
             String hashKey = buildHashKey(j, emb, keyFieldName);
-            ArrayList<String> arr = new ArrayList<String>();
 
-            if (hashKeys.contains(hashKey)) {
-                arr = (ArrayList) hashKeys.get(hashKey);
-                arr.add(id);
+            long tt = System.currentTimeMillis();
+            hashKeys.set(hashKey + "_" + tt, id);
 
-            } else {
-                arr.add(id);
-            }
-            hashKeys.set(hashKey, arr);
+            //ArrayList<String> arr; // = new ArrayList<String>();
+            //arr = (ArrayList) hashKeys.get(hashKey);
+            //if (arr==null)
+            //   arr  = new ArrayList<String>();
+            //arr.add(id);
+            //hashKeys.set(hashKey, arr);
         }
     }
 
@@ -504,7 +512,7 @@ public abstract class DataStore {
             }
             result = forkHashTables(emb, queryRecord, Configuration.RECORD_LEVEL);
         }
-        
+
         return result;
     }
 
@@ -571,7 +579,7 @@ public abstract class DataStore {
         StoreConfigurationParams c = conf.get(Config.CONFIG_STORE, storeName);
         if (c != null) {
             try {
-                DataStore ds = DataStoreFactory.build(c.getTarget(), storeName, c.getLSHStore(), c.getEngine(), null, false);
+                DataStore ds = DataStoreFactory.build(c.getTarget(), storeName, c.getLSHStore(), c.getEngine(), null, true);
                 return ds;
             } catch (ClassNotFoundException | NoSuchMethodException ex) {
                 log.error("Initialization error of data store " + storeName, ex);

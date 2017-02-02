@@ -21,4 +21,5 @@ public interface StoreEngine {
      public boolean contains(String key);     
      public abstract long count();
      public void close();
+     public abstract Iterable createIterator();
  }

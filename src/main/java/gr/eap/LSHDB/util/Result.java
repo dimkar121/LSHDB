@@ -193,8 +193,9 @@ public class Result implements Serializable {
         JSON j = new JSON();
         return j.prepare(this);
     }
+    
     public ArrayList<Record> asList(){
-        //prepare();
+        prepare();
         return this.getRecords();
     }
     

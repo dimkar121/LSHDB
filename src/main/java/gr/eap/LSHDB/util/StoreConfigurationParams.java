@@ -36,7 +36,7 @@ public class StoreConfigurationParams {
         return engine;
     }
     public String getConfiguration(){
-        return engine;
+        return configuration;
     }
     public void setTarget(String target){
         this.target = target;

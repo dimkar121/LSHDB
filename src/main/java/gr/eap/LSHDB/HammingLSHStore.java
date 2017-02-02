@@ -22,7 +22,7 @@ public class HammingLSHStore extends DataStore  {
         this.storeName = dbName;
         this.massInsertMode = massInsertMode;
         if (hc == null) {
-            hConf = new HammingConfiguration(folder, dbName, dbEngine, massInsertMode);
+            hConf = new HammingConfiguration(folder, dbName, dbEngine, massInsertMode);            
         } else {
             hConf = (HammingConfiguration) hc;
         }        
