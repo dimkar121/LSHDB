@@ -35,14 +35,14 @@ In the in-line mode, using a simple initialization code snippet of the following
 ```java
 String folder = "/home/LSHDB/stores";
 String storeName = "dblp";
-String engine = "gr.eap.LSHDB.MapDB";
+String engine = "gr.eap.LSHDB.LevelDB";
 HammingLSHStore lsh = new HammingLSHStore(folder, storeName, engine);
 ```
 or using the compact factory call (provided that the configuration is given in a XML file -- see below):
 ```java
 HammingLSHStore.open("dblp");
 ```
-one opens a data store named `dblp`, which has been serialized under `/home/LSHDB/stores`, and has been created using `Hamming LSH` and `MapDB`[http://www.mapdb.org] as the underlying LSH implementation and noSQL engine, respectively.
+one opens a data store named `dblp`, which has been serialized under `/home/LSHDB/stores`, and has been created using `Hamming LSH` and `LevelDB`[https://github.com/google/leveldb] (using [https://github.com/fusesource/leveldbjni] as native interface) as the underlying LSH implementation and noSQL engine, respectively.
 
 
 In the following, using the [DBLP](http://dblp.uni-trier.de/) database, we will showcase how one can insert some records, and submit similarity queries either by using Java objects or by performing asynchronous `AJAX` requests.
@@ -114,7 +114,7 @@ In case one needs to run LSHDB as a server instance, then, should provide the fo
      <store>
        <name>dblp</name>  
        <target>/home/LSHDB/stores</target>
-       <engine>gr.eap.LSHDB.MapDB</engine>
+       <engine>gr.eap.LSHDB.LevelDB</engine>
        <LSHStore>gr.eap.LSHDB.HammingLSHStore</LSHStore>
        <LSHConfiguration>gr.eap.LSHDB.HammingConfiguration</LSHConfiguration>    
      </store>
