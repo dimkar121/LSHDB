@@ -42,7 +42,7 @@ or using the compact factory call (provided that the configuration is given in a
 ```java
 HammingLSHStore.open("dblp");
 ```
-one opens a data store named `dblp`, which has been serialized under `/home/LSHDB/stores`, and has been created using `Hamming LSH` and [LevelDB](https://github.com/google/leveldb) (using [this native interface](https://github.com/fusesource/leveldbjni) ) as the underlying LSH implementation and noSQL engine, respectively.
+one opens a data store named `dblp`, which has been serialized under `/home/LSHDB/stores`, and has been created using `Hamming LSH` and [LevelDB](https://github.com/google/leveldb) (utilizing [this native interface](https://github.com/fusesource/leveldbjni) ) as the underlying LSH implementation and noSQL engine, respectively.
 
 
 In the following, using the [DBLP](http://dblp.uni-trier.de/) database, we will showcase how one can insert some records, and submit similarity queries either by using Java objects or by performing asynchronous `AJAX` requests.
