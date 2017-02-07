@@ -191,9 +191,10 @@ We also have to denote which of these server aliases support our specified store
 </remote_stores>
 ```
 
-###Data Sets for Testing
+###Data sets for testing
 Test data sets have been uploaded at [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/JKBULA) using `Hamming LSH` and `LevelDB`. 
-Specifically, 
+
+Specifically, this repository includes:
 * the query file `Q.txt`, extracted from the [NCVR list](http://dl.ncsbe.gov/index.html?prefix=data/),
 * the queried data set `A.txt`, and 
 * the corresponding `LevelDB` data store, which includes the records of `A.txt`. 
