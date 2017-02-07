@@ -79,6 +79,7 @@ The following snippet submits a similarity query against the `dblp` store, using
 QueryRecord query = new QueryRecord(n); // n denotes the max number of the returned records.
 query.setKeyedField("author", new String[]{"John"},1.0,true);
 Result result = lsh.query(query);
+result.prepare();
 ArrayList<Record> arr = result.getRecords();
 ```
 A one-line code that both opens a data store and submits a query is as follows:
