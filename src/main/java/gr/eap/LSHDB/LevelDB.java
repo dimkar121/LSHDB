@@ -47,13 +47,14 @@ public class LevelDB implements StoreEngine {
         options.createIfMissing(true);
         options.compressionType(CompressionType.NONE);                
         try {
-            options.cacheSize(600 * 1048576); // 600MB cache
+            options.cacheSize(600 * 1048576); // 600MB cache            
             JniDBFactory.pushMemoryPool(1024 * 512);
             db = factory.open(new File(fileName), options);
             if (massInsertMode){
                 bulkInsert = true;
                 batch = db.createWriteBatch();
             }    
+                    
         } catch (IOException ex) {
             log.error("Error opening LevelDB store "+ storeName );
         }

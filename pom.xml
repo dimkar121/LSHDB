@@ -36,11 +36,6 @@
     </scm>
     <dependencies>
         <dependency>
-            <groupId>org.mapdb</groupId>
-            <artifactId>mapdb</artifactId>
-            <version>3.0.0</version>
-        </dependency>
-        <dependency>
             <groupId>com.sleepycat</groupId>
             <artifactId>je</artifactId>
             <version>3.3.75</version>
@@ -72,11 +67,6 @@
             <version>4.10</version>
             <scope>test</scope>
         </dependency>        
-        <!-- dependency>        
-            <groupId>org.iq80.leveldb</groupId>
-            <artifactId>leveldb</artifactId>
-            <version>0.9</version>
-        </dependency -->        
         <dependency>
           <groupId>org.fusesource.leveldbjni</groupId>
           <artifactId>leveldbjni-all</artifactId>

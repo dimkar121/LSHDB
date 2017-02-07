@@ -18,9 +18,7 @@ package gr.eap.LSHDB;
 import static com.sun.org.apache.xalan.internal.lib.ExsltDatetime.year;
 import gr.eap.LSHDB.util.Record;
 import static jdk.nashorn.internal.runtime.Debug.id;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-import org.mapdb.HTreeMap;
+
 
 /**
  *
@@ -33,15 +31,7 @@ public class HammingLSHStoreTest {
     
     public HammingLSHStoreTest() {
        
-            DB mem = DBMaker.memoryDB().make();            
-            HTreeMap map = mem.hashMap("store_test").create();
-            //lsh = new HammingLSHStore();
-            Record rec = new Record();
-            rec.setId("1");
-            rec.set("author", "Donald Knuth");
-            rec.set("year", "2000");
-            rec.set("title", "An Approximate COunting Method");
-            
+                     
 
             
             

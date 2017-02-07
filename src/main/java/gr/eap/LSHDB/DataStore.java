@@ -328,7 +328,6 @@ public abstract class DataStore {
                     int u = noHashTable + NO_FORKED_HASHTABLES;
                     for (int j = noHashTable; j < u; j++) {
                         if (j == newKey.getL()) {
-                            System.out.println("exit "+j+" "+newKey.getL());
                             break;
                         }
                         String hashKey = buildHashKey(j, struct11, keyFieldName1);
@@ -336,11 +335,9 @@ public abstract class DataStore {
                         //if (keys.contains(hashKey)) {
                         //  ArrayList arr = (ArrayList) keys.get(hashKey);
                         //for (int i = 0; i < arr.size(); i++) {
-                        System.out.println("hashKey=" + hashKey + " " + j + " " +u);
-
+                        
                         for (iterator.seek(hashKey); iterator.hasNext(); iterator.next()) {
                             String key = iterator.getKey();
-                            System.out.println("key=" + key);
                             if (key.startsWith(hashKey)) {
                                 String id = "";
                                 try {
