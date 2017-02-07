@@ -201,7 +201,7 @@ Specifically, this repository includes:
 
 For each record of `Q.txt`, we generated 10 records by applying four (edit, delete, insert) edit distance operations (chosen at random) in order to build `A.txt`. You may use the client Swing application `TestApp_NCVR.java`, which is icluded in the [apps](https://github.com/dimkar121/apps) package. Do not forget to change a couple of variables therein regarding the physical location of the data store (e.g., `/home/user/LEVELDB`) and the physical location of the query file `Q.txt` (e.g., `/home/user/Q.txt`). First, compile the package (`mvn compile`) and then run the application by issuing the following command:
 
-`mvn exec:java  -Dexec.mainClass="gr.eap.LSHDB.apps.TableApp_NCVR`
+`mvn exec:java  -Dexec.mainClass="gr.eap.LSHDB.apps.TableApp_NCVR"`
 
 ###References
 For the interested reader, we suggest the following research papers:
