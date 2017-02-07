@@ -191,6 +191,14 @@ We also have to denote which of these server aliases support our specified store
 </remote_stores>
 ```
 
+###Data Sets for Testing
+Test data sets have been uploaded at [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/JKBULA) using `Hamming LSH` and `LevelDB`. 
+Specifically, 
+* the query file `Q.txt`, extracted from the [NCVR list](http://dl.ncsbe.gov/index.html?prefix=data/),
+* the queried data set `A.txt`, and 
+* the corresponding `LevelDB` data store, which includes the records of `A.txt`. 
+
+For each record of `Q.txt`, we generated 10 records by applying four (edit, delete, insert) edit distance operations (chosen at random) in order to build `A.txt`. You may use the client Swing application `TestApp_NCVR.java`, which is icluded in the [apps](https://github.com/dimkar121/apps) package. Do not forget to change a couple of variables therein regarding the physical location of the data store (e.g., `/home/user/LEVELDB`) and the physical location of the query file `Q.txt` (e.g., `/home/user/Q.txt`).
 
 ###References
 For the interested reader, we suggest the following research papers:
