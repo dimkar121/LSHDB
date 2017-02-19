@@ -192,7 +192,7 @@ We also have to denote which of these server aliases support our specified store
 </remote_stores>
 ```
 
-###Data sets for testing
+###Evaluating LSHDB
 Test data sets have been uploaded at [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/JKBULA) using `Hamming LSH` and `LevelDB`. 
 
 Specifically, this repository includes:
