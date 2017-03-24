@@ -9,7 +9,7 @@ for performing [record linkage](https://en.wikipedia.org/wiki/Record_linkage) (i
 
 The relevant demo paper ["LSHDB: A Parallel and Distributed Engine for Record Linkage and Similarity Search"](http://ieeexplore.ieee.org/document/7867099/) by Dimitrios Karapiperis (HoU), Aris Gkoulalas-Divanis (IBM), and Vassilios S. Verykios (HoU) was presented in IEEE ICDM 2016, which was held in Barcelona, Spain.
 
-##The main features of LSHDB are:
+## The main features of LSHDB are:
 * __Easy extensibility__  Support of any noSQL data store, or LSH technique can be easily plugged by extending or implementing the respective abstract classes or interfaces.
 * __Support of both the online query-driven mode and the offline batch process of record linkage__  LSHDB works in two modes; the first mode allows the resolution of the submitted queries in real time, while the second mode works in the traditional offline mode, which reports the results after the record linkage task has been completed.
 * __Suport of the PPRL mode__  In the case of PPRL, each participating party, termed also as a data custodian, may send its records, which have been previously masked, to a Trusted Third Party (TTP). The TTP configures and uses LSHDB for performing the linkage task and eventually sending the results back to the respective data custodians.
@@ -48,7 +48,7 @@ one opens a data store named `dblp`, which has been serialized under `/home/LSHD
 In the following, using the [DBLP](http://dblp.uni-trier.de/) database, we will showcase how one can insert some records, and submit similarity queries either by using Java objects or by performing asynchronous `AJAX` requests.
 
 
-##Inserting records into a store
+## Inserting records into a store
 
 Assume a store that contains the titles of the publications contained in DBLP along with the name of their first author. In order to support queries with respect to these names, we have to specify a keyed field, from which specialized data structures will be constructed and persisted. If one also needs to submit queries uisng the titles of the publications, then he/she should simply add an additional keyed field.
 ```java
@@ -72,7 +72,7 @@ lsh.close();
 ```
 The object `record` may store any kind of fields depending on the running application; a publication may refer to a cenference `record.set("conference", conferenceInfo);` or to a journal `record.set("journal", journalInfo);`.
 
-##Querying a store
+## Querying a store
 
 The following snippet submits a similarity query against the `dblp` store, using keyed fields.
 ```java
@@ -105,7 +105,7 @@ we narrow the reults, which get closer to the query value ("John"):
 - Michael __Johnson__ Unifying Set-Based  Delta-Based and Edit-Based Lenses
 - Rachel St. __John__ Spatially explicit forest harvest scheduling with difference equations etc.
 
-##Running LSHDB as a server instance
+## Running LSHDB as a server instance
 In case one needs to run LSHDB as a server instance, then, should provide the following minimum configuration:
 ```xml
 <LSHDB>
@@ -138,7 +138,7 @@ Note that the `query` object holds the name of the store that will be queried. L
 In all the above listings, the handling of any checked thrown exceptions (such as `StoreInitException`, `ConnectException`, `UnknownHostException` etc.) is omitted for brevity.
 
 
-##Performing asynchronous `AJAX` requests
+## Performing asynchronous `AJAX` requests
 Assuming a fully functional instance running on `localhost` at port `4443`, which hosts the `dblp` store, one by submitting the url `http://localhost:4443/JSON/dblp?author_Query=John` through a web browser, receives the results in `JSON` format. A more advanced option is to use `jquery` as follows:
 ```javascript
     $.ajax({
@@ -162,7 +162,7 @@ Assuming a fully functional instance running on `localhost` at port `4443`, whic
     });
 ```
 
-##Distributed settings
+## Distributed settings
 To showcase the distributed extensions of LSHDB, assume that records of the `dblp` store have been horizontally partitioned to three compute nodes, namely `n1`, `n2`, and `n3`, where `n2` and `n3` have been registered as remote nodes to `n1`. Subsequently, a client may submit a query to `n1`, which forwards that query to `n2` and `n3` in parallel using a pool of threads. Upon completion of the local and remote queries, `n1` sends the results back to the client. The following snippet registers `n2` and `n3` to `n1`.
 ```xml
 <remote_nodes>
@@ -192,7 +192,7 @@ We also have to denote which of these server aliases support our specified store
 </remote_stores>
 ```
 
-###Evaluating LSHDB
+## Evaluating LSHDB
 Test data sets have been uploaded at [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/JKBULA) using `Hamming LSH` and `LevelDB`. 
 
 Specifically, this repository includes:
@@ -204,7 +204,7 @@ For each record of `Q.txt`, we generated 10 records by applying four (edit, dele
 
 `mvn exec:java  -Dexec.mainClass="gr.eap.LSHDB.apps.TableApp_NCVR"`
 
-###References
+## References
 For the interested reader, we suggest the following research papers:
 * [Similarity Search in High Dimensions via Hashing](http://www.vldb.org/conf/1999/P49.pdf), presented in VLDB (1999).
 * [A fast and efficient Hamming LSH-based scheme for accurate linkage](http://link.springer.com/article/10.1007/s10115-016-0919-y), published by KAIS (2016).
