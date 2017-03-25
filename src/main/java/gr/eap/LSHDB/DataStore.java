@@ -18,20 +18,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import gr.eap.LSHDB.client.Client;
 import gr.eap.LSHDB.util.Config;
-import gr.eap.LSHDB.util.FileUtil;
 import gr.eap.LSHDB.util.ListUtil;
 import gr.eap.LSHDB.util.StoreConfigurationParams;
 import java.io.File;
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.Map;
 import org.apache.log4j.Logger;
-import static org.fusesource.leveldbjni.JniDBFactory.asString;
-import static org.fusesource.leveldbjni.JniDBFactory.bytes;
-import org.iq80.leveldb.DBIterator;
 
 /**
  *
@@ -49,6 +44,7 @@ public abstract class DataStore {
     public StoreEngine keys;
     public StoreEngine records;
     HashMap<String, StoreEngine> keyMap = new HashMap<String, StoreEngine>();
+    HashMap<String, HashMap> cacheMap = new HashMap<String, HashMap>();
     HashMap<String, StoreEngine> dataMap = new HashMap<String, StoreEngine>();
     ArrayList<Node> nodes = new ArrayList<Node>();
     ArrayList<DataStore> localStores = new ArrayList<DataStore>();
@@ -64,6 +60,29 @@ public abstract class DataStore {
 
     private ExecutorService hashTablesExecutor = Executors.newFixedThreadPool(600);
     private ExecutorService nodesExecutor = Executors.newCachedThreadPool();
+
+    private long next = 0;
+
+    private int CACHEENTRYLIMIT = 5000;
+    private int CACHENOLIMIT = 60000;
+    
+    public void setCacheEntryLimit(int limit) {
+        this.CACHEENTRYLIMIT = limit;
+    }
+
+    public int getCacheEntryLimit() {
+        return this.CACHEENTRYLIMIT;
+    }
+    
+    public void setCacheNoLimit(int limit) {
+        this.CACHENOLIMIT = limit;
+    }
+
+    public synchronized long incId() {
+        next++;
+        long tt = System.currentTimeMillis() + next;
+        return tt;
+    }
 
     public static boolean exists(String folder, String storeName) {
         String pathToDB = folder + System.getProperty("file.separator") + storeName;
@@ -128,9 +147,15 @@ public abstract class DataStore {
         return keyMap.get(fieldName);
     }
 
+    public HashMap getCacheMap(String fieldName) {
+        fieldName = fieldName.replaceAll(" ", "");
+        return cacheMap.get(fieldName);
+    }
+
     public void setKeyMap(String fieldName, boolean massInsertMode) throws NoSuchMethodException, ClassNotFoundException {
         fieldName = fieldName.replaceAll(" ", "");
         keyMap.put(fieldName, StoreEngineFactory.build(folder, storeName, KEYS + "_" + fieldName, dbEngine, massInsertMode));
+        cacheMap.put(fieldName, new HashMap());
     }
 
     public StoreEngine getDataMap(String fieldName) {
@@ -143,7 +168,6 @@ public abstract class DataStore {
         dataMap.put(fieldName, StoreEngineFactory.build(folder, storeName, DATA + "_" + fieldName, dbEngine, massInsertMode));
     }
 
-    
     public void init(String dbEngine, boolean massInsertMode) throws StoreInitException {
         try {
             this.dbEngine = dbEngine;
@@ -170,18 +194,24 @@ public abstract class DataStore {
         }
     }
 
+   
+
+    
+    
     public void close() {
         hashTablesExecutor.shutdown();
         nodesExecutor.shutdown();
+
         records.close();
         if (this.getConfiguration().isKeyed()) {
             String[] keyFieldNames = this.getConfiguration().keyFieldNames;
             for (int j = 0; j < keyFieldNames.length; j++) {
-                String indexFieldName = keyFieldNames[j];
-                StoreEngine dataFactory = getKeyMap(indexFieldName);
-                dataFactory.close();
-                dataFactory = getDataMap(indexFieldName);
-                dataFactory.close();
+                String keyFieldName = keyFieldNames[j];
+                persistCache(keyFieldName);
+                StoreEngine keyStore = getKeyMap(keyFieldName);                
+                keyStore.close();
+                StoreEngine dataStore = getDataMap(keyFieldName);                
+                dataStore.close();
             }
         } else {
             data.close();
@@ -314,7 +344,6 @@ public abstract class DataStore {
             partitionsNo++;
         }
 
-        
         Instant start = Instant.now();
         final Result result = new Result(queryRec);
 
@@ -322,7 +351,7 @@ public abstract class DataStore {
 
             List<Callable<Result>> callables = new ArrayList<Callable<Result>>();
             final int noHashTable = p * NO_FORKED_HASHTABLES;
-            callables.add(new Callable<Result>() {                
+            callables.add(new Callable<Result>() {
                 public Result call() throws StoreInitException, NoKeyedFieldsException {
                     Iterable iterator = keys.createIterator();
                     int u = noHashTable + NO_FORKED_HASHTABLES;
@@ -335,46 +364,51 @@ public abstract class DataStore {
                         //if (keys.contains(hashKey)) {
                         //  ArrayList arr = (ArrayList) keys.get(hashKey);
                         //for (int i = 0; i < arr.size(); i++) {
-                        
                         for (iterator.seek(hashKey); iterator.hasNext(); iterator.next()) {
                             String key = iterator.getKey();
                             if (key.startsWith(hashKey)) {
-                                String id = "";
+                                //String id = "";
+                                ArrayList<String> arr = null;
                                 try {
-                                    id = iterator.getValue() + "";
+                                    //id = iterator.getValue() + "";
+                                    arr = (ArrayList) iterator.getValue();
                                 } catch (Exception ex) {
                                     ex.printStackTrace();
                                 }
 
                                 CharSequence cSeq = Key.KEYFIELD;
-                                String idRec = id;
-                                if (idRec.contains(cSeq)) {
-                                    idRec = id.split(Key.KEYFIELD)[0];
-                                }
-                                Record dataRec = null;
-                                if (!conf.isPrivateMode()) {
-                                    dataRec = (Record) records.get(idRec);   // which id and which record shoudl strip the "_keyField_" part , if any
-                                } else {
-                                    dataRec = new Record();
-                                    dataRec.setId(idRec);
-                                }
 
-                                result.incPairsNo();
-                                if ((performComparisons) && (!result.getMap(keyFieldName1).containsKey(id))) {
-                                    Embeddable struct2 = (Embeddable) data.get(id);
-                                    if (distance(struct11, struct2, newKey)) {
-                                        result.add(keyFieldName1, dataRec);
-                                        int matchesNo = result.getDataRecordsSize(keyFieldName1);
-                                        if (matchesNo >= maxQueryRows) {
-                                            return result;
-                                        }
+                                for (int m = 0; m < arr.size(); m++) {
+                                    String id = arr.get(m);
+
+                                    String idRec = id;
+                                    if (idRec.contains(cSeq)) {
+                                        idRec = id.split(Key.KEYFIELD)[0];
+                                    }
+                                    Record dataRec = null;
+                                    if (!conf.isPrivateMode()) {
+                                        dataRec = (Record) records.get(idRec);   // which id and which record shoudl strip the "_keyField_" part , if any
                                     } else {
+                                        dataRec = new Record();
+                                        dataRec.setId(idRec);
                                     }
 
-                                } else {
-                                    result.add(keyFieldName1, dataRec);
-                                }
+                                    result.incPairsNo();
+                                    if ((performComparisons) && (!result.getMap(keyFieldName1).containsKey(id))) {
+                                        Embeddable struct2 = (Embeddable) data.get(id);
+                                        if (distance(struct11, struct2, newKey)) {
+                                            result.add(keyFieldName1, dataRec);
+                                            int matchesNo = result.getDataRecordsSize(keyFieldName1);
+                                            if (matchesNo >= maxQueryRows) {
+                                                return result;
+                                            }
+                                        } else {
+                                        }
 
+                                    } else {
+                                        result.add(keyFieldName1, dataRec);
+                                    }
+                                }
                             } else {
                                 break;
                             }
@@ -398,15 +432,31 @@ public abstract class DataStore {
             } catch (InterruptedException ex) {
                 log.error("forkHashTables ", ex);
             } catch (MaxNoRecordsReturnedException ex) {
-                
+
                 return result;
             }
 
         }
-       
+
         return result;
     }
 
+     public void persistCache(String keyFieldName) {
+        boolean isKeyed = this.getConfiguration().isKeyed();
+        StoreEngine hashKeys = keys;
+        if (isKeyed) 
+            hashKeys = this.getKeyMap(keyFieldName);        
+        HashMap<String, ArrayList> cache = getCacheMap(keyFieldName);        
+        for (Map.Entry<String,ArrayList> entry : cache.entrySet()) {
+            long tt = incId();
+            //System.out.println("key="+entry.getKey()+ "_" + tt);                    
+            hashKeys.set(entry.getKey() + "_" + tt, entry.getValue());
+        }
+        cache.clear();
+        //cacheMap.put(keyFieldName, new HashMap());
+    }
+    
+    
     public void setHashKeys(String id, Embeddable emb, String keyFieldName) {
         boolean isKeyed = this.getConfiguration().isKeyed();
         String[] keyFieldNames = this.getConfiguration().getKeyFieldNames();
@@ -414,21 +464,37 @@ public abstract class DataStore {
         if (isKeyed) {
             hashKeys = this.getKeyMap(keyFieldName);
         }
-
+        HashMap<String, ArrayList> cache = this.getCacheMap(keyFieldName);
         Key key = this.getConfiguration().getKey(keyFieldName);
-
+        
+               
+        
         for (int j = 0; j < key.L; j++) {
             String hashKey = buildHashKey(j, emb, keyFieldName);
 
-            long tt = System.currentTimeMillis();
-            hashKeys.set(hashKey + "_" + tt, id);
+            /* ArrayList<String> arr = new ArrayList<String>();
+            arr.add(id);
+            hashKeys.set(hashKey+"_"+incId(), arr );*/
+            
+            if (cache.containsKey(hashKey)) {
+                ArrayList arr = cache.get(hashKey);
+                arr.add(id);
+                if (arr.size() >= CACHEENTRYLIMIT) {      
+                    long tt = incId();                   
+                    hashKeys.set(hashKey + "_" + tt, arr);
+                    cache.remove(hashKey);
+                }
+            } else {
+                ArrayList<String> arr = new ArrayList<String>();
+                arr.add(id);
+                cache.put(hashKey, arr);
+            }
+            
+            if (cache.size() >= CACHENOLIMIT){                             
+                persistCache(keyFieldName);
+            }
+            
 
-            //ArrayList<String> arr; // = new ArrayList<String>();
-            //arr = (ArrayList) hashKeys.get(hashKey);
-            //if (arr==null)
-            //   arr  = new ArrayList<String>();
-            //arr.add(id);
-            //hashKeys.set(hashKey, arr);
         }
     }
 

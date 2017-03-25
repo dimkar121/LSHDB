@@ -130,15 +130,15 @@ public class Config {
         StoreConfigurationParams c = new StoreConfigurationParams();
         for (int i = 0; i < nodes.getLength(); i++) {
             Element node = (Element) nodes.item(i);
-            Node nameNode = node.getElementsByTagName(Config.CONFIG_STORE_NAME).item(i);
+            Node nameNode = node.getElementsByTagName(Config.CONFIG_STORE_NAME).item(0); //i
             if (nameNode.getTextContent().equals(value)) {
-                Node targetNode = node.getElementsByTagName(Config.CONFIG_TARGET).item(i);
+                Node targetNode = node.getElementsByTagName(Config.CONFIG_TARGET).item(0);
                 c.setTarget(targetNode.getTextContent());
-                Node engineNode = node.getElementsByTagName(Config.CONFIG_NOSQL_ENGINE).item(i);
+                Node engineNode = node.getElementsByTagName(Config.CONFIG_NOSQL_ENGINE).item(0);
                 c.setEngine(engineNode.getTextContent());
-                Node configurationNode = node.getElementsByTagName(Config.CONFIG_CONFIGURATION).item(i);
+                Node configurationNode = node.getElementsByTagName(Config.CONFIG_CONFIGURATION).item(0);
                 c.setConfiguration(configurationNode.getTextContent());
-                Node LSHStoreNode = node.getElementsByTagName(Config.CONFIG_LSH).item(i);
+                Node LSHStoreNode = node.getElementsByTagName(Config.CONFIG_LSH).item(0);
                 c.setLSHStore(LSHStoreNode.getTextContent());
 
                 log.info(c.getEngine() + " " + c.getTarget() + " " + c.configuration);

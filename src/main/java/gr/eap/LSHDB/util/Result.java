@@ -11,6 +11,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -156,17 +157,17 @@ public class Result implements Serializable {
 
     public void prepare() {       
         ArrayList<String> fieldNames = queryRecord.getQueryFieldNames(); //   queryRecord.getFieldNames();  // 
-        HashMap<String, HashMap<String, Record>> mapField = new HashMap<String, HashMap<String, Record>>();
+        HashMap<String, LinkedHashMap<String, Record>> mapField = new HashMap<String, LinkedHashMap<String, Record>>();
 
         for (int i = 0; i < fieldNames.size(); i++) {
             String fieldName = fieldNames.get(i);
             if (fieldName.endsWith(Key.TOKENS)) {
                 continue;
             }
-            HashMap<String, Record> map = recordListMap.get(fieldName).getRecords();
+            LinkedHashMap<String, Record> map = recordListMap.get(fieldName).getRecords();
             mapField.put(fieldName, map);
             if (i == 0) {
-                globalMap = new HashMap<String, Record>(map);
+                globalMap = new LinkedHashMap<String, Record>(map);
             } else {
                 globalMap.keySet().retainAll(map.keySet());
                 // try with entrySet
@@ -209,6 +210,9 @@ public class Result implements Serializable {
         }
     }
 
+    
+    
+    
     public synchronized boolean add(String fieldName, Record rec) {
         if (recordListMap.containsKey(fieldName)) {
             return recordListMap.get(fieldName).add(rec);

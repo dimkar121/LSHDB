@@ -7,9 +7,11 @@ package gr.eap.LSHDB.util;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import static java.util.Collections.list;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -24,8 +26,8 @@ public class RecordList implements Serializable{
     
     int maxQueryRows;
     boolean performComparisons;    
-    transient HashMap<String, Record> m = new HashMap<String, Record>();
-    transient Map<String, Integer> freq = new HashMap<String, Integer>();
+    transient HashMap<String, Record> m = new LinkedHashMap<String, Record>();
+    transient Map<String, Integer> freq = new LinkedHashMap<String, Integer>();
     String fieldName;
     int elements = 0;
     
@@ -51,6 +53,8 @@ public class RecordList implements Serializable{
             return true;
         return false;
     }
+    
+       
     
     public boolean add(Record rec) {        
         if (performComparisons) {
@@ -93,9 +97,9 @@ public class RecordList implements Serializable{
 
     
     
-    public HashMap<String, Record> getRecords() {
+    public LinkedHashMap<String, Record> getRecords() {
         //ArrayList<Record> arr = new ArrayList<Record>();
-        HashMap<String, Record> map = new HashMap<String, Record>();
+        LinkedHashMap<String, Record> map = new LinkedHashMap<String, Record>();
          
             
         if (performComparisons) {

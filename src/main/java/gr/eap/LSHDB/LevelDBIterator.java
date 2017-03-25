@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import static org.fusesource.leveldbjni.JniDBFactory.asString;
 import static org.fusesource.leveldbjni.JniDBFactory.bytes;
 import org.iq80.leveldb.DBIterator;
+import org.iq80.leveldb.ReadOptions;
 
 /**
  *
@@ -34,6 +35,8 @@ public class LevelDBIterator implements Iterable {
     DBIterator dbIt;
     
      public LevelDBIterator(LevelDB de){
+          ReadOptions ro = new ReadOptions();
+          ro.fillCache();
           dbIt = de.db.iterator();
      }
    

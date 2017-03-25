@@ -47,9 +47,9 @@ public class LevelDB implements StoreEngine {
         options.createIfMissing(true);
         options.compressionType(CompressionType.NONE);                
         try {
-            options.cacheSize(600 * 1048576); // 600MB cache            
+            options.cacheSize(600 * 1048576); // 600MB cache                        
             JniDBFactory.pushMemoryPool(1024 * 512);
-            db = factory.open(new File(fileName), options);
+            db = factory.open(new File(fileName), options);            
             if (massInsertMode){
                 bulkInsert = true;
                 batch = db.createWriteBatch();
@@ -62,7 +62,7 @@ public class LevelDB implements StoreEngine {
 
     public void close() {
         try {
-            if (bulkInsert){                
+            if (bulkInsert){                   
                 db.write(batch);
               batch.close();
            }    

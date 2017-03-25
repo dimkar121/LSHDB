@@ -16,7 +16,7 @@ import org.apache.log4j.Logger;
  * @author dimkar
  */
 public class HammingKey  extends Key{
-    final static Logger log = Logger.getLogger(DataStore.class);
+    final static Logger log = Logger.getLogger(HammingKey.class);
     
     public static final long serialVersionUID = 501L;
     
@@ -63,6 +63,8 @@ public class HammingKey  extends Key{
     
     @Override    
     public Key create(double thresholdRatio){
+        if (thresholdRatio == 1.0)
+            thresholdRatio = 1.23;
         int t = (int) Math.round(this.t * thresholdRatio);        
         return new HammingKey(k,delta,t,emb.getSize());
     }
