@@ -185,6 +185,7 @@ public abstract class DataStore {
                 data = StoreEngineFactory.build(folder, storeName, DATA, dbEngine, massInsertMode);
                 keyMap.put(Configuration.RECORD_LEVEL, keys);
                 dataMap.put(Configuration.RECORD_LEVEL, data);
+                cacheMap.put(Configuration.RECORD_LEVEL, new HashMap());
 
             }
         } catch (ClassNotFoundException ex) {
